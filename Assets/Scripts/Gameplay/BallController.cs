@@ -110,24 +110,33 @@ public class BallController : MonoBehaviour
     private void HandleDeadlyCollision()
     {
         _isGameOver = true;
-        
-        // Stop all motion
+    
+        // Stop ball physics
         _rigidbody.linearVelocity = Vector3.zero;
         _rigidbody.angularVelocity = Vector3.zero;
         _rigidbody.isKinematic = true;
-        
+    
         // Disable trail
         if (_trailRenderer != null)
         {
             _trailRenderer.emitting = false;
         }
+    
+        // Disable helix rotation
+        HelixRotator rotator = FindAnyObjectByType<HelixRotator>();
+        if (rotator != null)
+        {
+            rotator.DisableRotation();
+        }
+    
         Debug.Log("Game Over! Ball hit deadly platform.");
     }
+
     
     /// <summary>
     /// Resets ball to initial state for restart.
     /// </summary>
-    public void ResetBall(Vector3 startPosition)
+    internal void ResetBall(Vector3 startPosition)
     {
         _isGameOver = false;
         
@@ -147,7 +156,7 @@ public class BallController : MonoBehaviour
     /// <summary>
     /// Adjusts bounce height at runtime.
     /// </summary>
-    public void SetBounceHeight(float height)
+    internal void SetBounceHeight(float height)
     {
         _bounceHeight = Mathf.Max(0.1f, height);
     }
@@ -155,7 +164,7 @@ public class BallController : MonoBehaviour
     /// <summary>
     /// Adjusts gravity at runtime.
     /// </summary>
-    public void SetGravity(float gravity)
+    internal void SetGravity(float gravity)
     {
         _gravityForce = Mathf.Max(1f, gravity);
         _customGravity = Vector3.down * _gravityForce;
