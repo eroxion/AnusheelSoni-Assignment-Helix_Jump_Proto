@@ -31,7 +31,7 @@ public class PlatformGenerator : MonoBehaviour
     
     [Header("Central Cylinder")]
     [SerializeField] private Material _centralCylinderMaterial;
-    [SerializeField] private float _cylinderRadius = 0.3f;
+    [SerializeField] private float _cylinderRadius = 2f;
     
     [Header("Organization")]
     [SerializeField] private Transform _helixContainer;
