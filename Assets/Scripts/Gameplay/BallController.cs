@@ -67,17 +67,26 @@ public class BallController : MonoBehaviour
             _trailRenderer.emitting = true;
         }
     
+        // Apply difficulty settings BEFORE calculating physics
+        if (DifficultyManager.Instance != null)
+        {
+            _bounceFrequency = DifficultyManager.Instance.BounceFrequency;
+            Debug.Log($"Applied difficulty: Bounce Frequency {_bounceFrequency}");
+        }
+        
+        // Calculate physics with (possibly updated) bounce frequency
         RecalculatePhysics();
-    
-        // Set gravity start time
+        
+        // CRITICAL FIX: Initialize gravity start time
         _gravityStartTime = Time.time + _gravityStartDelay;
         _gravityEnabled = false;
-    
+        
         if (_showCountdown)
         {
             Debug.Log($"<color=yellow>Game starting in {_gravityStartDelay:F1} seconds...</color>");
         }
     }
+
     
     private void Update()
     {
