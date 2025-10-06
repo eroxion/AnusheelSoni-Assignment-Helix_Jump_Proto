@@ -3,7 +3,10 @@
 /[Tt]emp/
 /[Oo]bj/
 /[Bb]uild/
-/[Bb]uilds/
+# MODIFIED: Allow Builds/WebGL for GitHub Pages
+/[Bb]uilds/*
+!/[Bb]uilds/WebGL/
+!/[Bb]uilds/WebGL/**
 /[Ll]ogs/
 /[Uu]ser[Ss]ettings/
 *.log
@@ -62,7 +65,7 @@ sysinfo.txt
 # Mono auto generated files
 mono_crash.*
 
-# Builds
+# Builds (except WebGL for GitHub Pages)
 *.apk
 *.aab
 *.unitypackage
@@ -117,12 +120,10 @@ InitTestScene*.unity*
 # ============================================================================
 # Project-Specific Additions
 # ============================================================================
-# WebGL Build folder (will be deployed separately to GitHub Pages)
-/WebGL-Build/
-/WebGL-Builds/
-/[Ww]eb[Gg][Ll]-[Bb]uild*/
+# WebGL Build folder EXCEPTION - this is ALLOWED for GitHub Pages
+# /Builds/WebGL/ is explicitly NOT ignored above
 
-# Platform-specific build folders
+# Platform-specific build folders (these ARE ignored)
 /[Aa]ndroid/
 /[Ii]OS/
 /[Ww]indows/

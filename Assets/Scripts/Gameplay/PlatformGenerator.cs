@@ -1,15 +1,17 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 /// <summary>
-/// Generates helix tower with procedurally created platforms.
-/// Platform_0 is empty (starting point), actual platforms start from Platform_1.
-/// Platforms generate downward from parent position.
+/// Pure object pooling for infinite gameplay.
+/// Platforms generated once with random rotations, then only repositioned.
+/// Cylinders managed separately and transfer sequentially from top to bottom.
+/// Zero instantiation or destruction during gameplay.
 /// </summary>
 public class PlatformGenerator : MonoBehaviour
 {
     [Header("Platform Configuration")]
     [SerializeField] private GameObject _platformSegmentPrefab;
-    [SerializeField] private int _platformCount = 50;
+    [SerializeField] private int _initialPlatformCount = 20;
     [SerializeField] private float _platformSpacing = 4.0f;
     
     [Header("Segment Configuration")]
@@ -27,125 +29,163 @@ public class PlatformGenerator : MonoBehaviour
     [SerializeField] private Material _safePlatformMaterial;
     [SerializeField] private Material _deadlyPlatformMaterial;
     
-    [Header("Finish Platform")]
-    [Tooltip("Material for final finish platform (no gaps, no deadly segments)")]
-    [SerializeField] private Material _finishPlatformMaterial;
-    
     [Header("Central Cylinder")]
     [SerializeField] private Material _centralCylinderMaterial;
     [SerializeField] private float _cylinderRadius = 0.3f;
+    [SerializeField] private float _cylinderHeightPerSegment = 4.0f;
+    [SerializeField] private int _cylindersAboveStart = 3;
+    [SerializeField] private int _platformsBeforeCylinderTransfer = 4;
     
     [Header("Organization")]
     [SerializeField] private Transform _helixContainer;
     
+    [Header("Ball Reference")]
+    [SerializeField] private Transform _ball;
+    
+    // Object pooling
+    private List<GameObject> _platformPool = new List<GameObject>();
+    private List<GameObject> _cylinders = new List<GameObject>();
+    
+    private int _highestPassedIndex = -1;
+    private float _lowestPlatformY = 0f;
+    private float _lowestCylinderY = 0f;
+    
     private float _degreesPerSegment;
-    private int _actualPlatformCount;
+    private int _recycleCheckFrequency = 0;
     
     private void Awake()
     {
         _degreesPerSegment = 360f / _segmentsPerPlatform;
-        _actualPlatformCount = _platformCount + 1;
     }
     
     private void Start()
     {
-        // Apply difficulty settings (updates existing _deadlySegmentsRange Vector2Int)
+        // Find ball reference
+        if (_ball == null)
+        {
+            BallController ballController = FindAnyObjectByType<BallController>();
+            if (ballController != null)
+            {
+                _ball = ballController.transform;
+            }
+        }
+        
+        // Apply difficulty settings
         if (DifficultyManager.Instance != null)
         {
             _deadlySegmentsRange.x = DifficultyManager.Instance.MinDeadlySegments;
             _deadlySegmentsRange.y = DifficultyManager.Instance.MaxDeadlySegments;
-            Debug.Log($"Applied difficulty: Deadly Segments {_deadlySegmentsRange.x}-{_deadlySegmentsRange.y}");
         }
-    
+        
         // Generate level
-        GenerateCentralCylinder();
-        GenerateAllPlatforms();
+        GenerateCylinders();
+        GenerateInitialPlatforms();
     }
     
-    private void GenerateCentralCylinder()
+    private void Update()
     {
-        if (_helixContainer == null)
+        // Optimize: Check recycling every 3 frames
+        _recycleCheckFrequency++;
+        if (_recycleCheckFrequency >= 3)
         {
-            Debug.LogError("PlatformGenerator: Helix Container not assigned!");
-            return;
+            _recycleCheckFrequency = 0;
+            CheckPlatformsToRecycle();
         }
-    
-        GameObject cylinder = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-        cylinder.name = "CentralPole";
-        cylinder.transform.SetParent(_helixContainer);
-    
-        // Include finish platform in height calculation
-        float totalHeight = _actualPlatformCount * _platformSpacing; // +1 for finish platform
-        float cylinderY = -totalHeight / 2f;
-        cylinder.transform.localPosition = new Vector3(0f, cylinderY, 0f);
-    
-        float cylinderScaleY = totalHeight / 2f;
-        cylinder.transform.localScale = new Vector3(_cylinderRadius * 2f, cylinderScaleY, _cylinderRadius * 2f);
-    
-        if (_centralCylinderMaterial != null)
-        {
-            cylinder.GetComponent<MeshRenderer>().material = _centralCylinderMaterial;
-        }
-    
-        Destroy(cylinder.GetComponent<Collider>());
-    
-        Debug.Log($"Cylinder: Height={totalHeight:F2}, Y={cylinderY:F2} (includes finish platform)");
     }
-
     
-    private void GenerateAllPlatforms()
+    /// <summary>
+    /// Generates cylinders separately from platforms.
+    /// </summary>
+    private void GenerateCylinders()
+    {
+        if (_helixContainer == null) return;
+        
+        int totalCylinders = _initialPlatformCount + _cylindersAboveStart;
+        
+        for (int i = 0; i < totalCylinders; i++)
+        {
+            float yPosition = (_cylindersAboveStart - i) * _cylinderHeightPerSegment;
+            
+            GameObject cylinder = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            cylinder.name = $"Cylinder_{i}";
+            cylinder.transform.SetParent(_helixContainer);
+            cylinder.transform.localPosition = new Vector3(0f, yPosition, 0f);
+            
+            float cylinderScaleY = _cylinderHeightPerSegment / 2f;
+            cylinder.transform.localScale = new Vector3(_cylinderRadius * 2f, cylinderScaleY, _cylinderRadius * 2f);
+            
+            if (_centralCylinderMaterial != null)
+            {
+                cylinder.GetComponent<MeshRenderer>().material = _centralCylinderMaterial;
+            }
+            
+            Destroy(cylinder.GetComponent<Collider>());
+            
+            _cylinders.Add(cylinder);
+            
+            if (yPosition < _lowestCylinderY)
+            {
+                _lowestCylinderY = yPosition;
+            }
+        }
+        
+        Debug.Log($"Generated {totalCylinders} cylinders");
+    }
+    
+    /// <summary>
+    /// Generates initial platform pool with random Y rotations.
+    /// These exact platforms will be reused forever with only repositioning.
+    /// </summary>
+    private void GenerateInitialPlatforms()
     {
         if (_platformSegmentPrefab == null || _helixContainer == null)
         {
             Debug.LogError("PlatformGenerator: Missing prefab or container!");
             return;
         }
-    
-        // Generate all platforms including empty Platform_0
-        for (int i = 0; i < _actualPlatformCount; i++)
+        
+        for (int i = 0; i < _initialPlatformCount; i++)
         {
-            GenerateSinglePlatform(i);
+            float yPosition = -i * _platformSpacing;
+            
+            GameObject platformParent = new GameObject($"Platform_{i}");
+            platformParent.transform.SetParent(_helixContainer);
+            platformParent.transform.localPosition = new Vector3(0f, yPosition, 0f);
+            
+            // Apply random Y rotation to every platform
+            float randomYRotation = Random.Range(0f, 360f);
+            platformParent.transform.localRotation = Quaternion.Euler(0f, randomYRotation, 0f);
+            
+            // Generate segments once
+            GeneratePlatformSegments(platformParent.transform);
+            
+            _platformPool.Add(platformParent);
+            
+            if (yPosition < _lowestPlatformY)
+            {
+                _lowestPlatformY = yPosition;
+            }
         }
-    
-        // Generate final finish platform (after all normal platforms)
-        GenerateFinishPlatform();
-    
-        Debug.Log($"Generated {_actualPlatformCount} platforms ({_platformCount} visible + 1 empty) + 1 finish platform.");
+        
+        Debug.Log($"Generated {_initialPlatformCount} platforms with random rotations");
     }
     
     /// <summary>
-    /// Generates single platform with random gap and deadly segments.
-    /// Platform_0 is empty (no segments).
+    /// Generates segments for a platform (ONLY called during initial generation).
     /// </summary>
-    private void GenerateSinglePlatform(int platformIndex)
+    private void GeneratePlatformSegments(Transform platformParent)
     {
-        float yPosition = -platformIndex * _platformSpacing;
-        
-        GameObject platformParent = new GameObject($"Platform_{platformIndex}");
-        platformParent.transform.SetParent(_helixContainer);
-        platformParent.transform.localPosition = new Vector3(0f, yPosition, 0f);
-        
-        // Platform_0 is empty (starting point)
-        if (platformIndex == 0)
-        {
-            return;
-        }
-        
-        // Randomly determine gap size within range
         int gapSize = Random.Range(_gapSizeRange.x, _gapSizeRange.y + 1);
         int gapStart = Random.Range(0, _segmentsPerPlatform);
         
-        // Randomly determine number of deadly segments within range
         int deadlySegmentCount = Random.Range(_deadlySegmentsRange.x, _deadlySegmentsRange.y + 1);
         
-        // Randomly select which segments will be deadly (excluding gap segments)
-        System.Collections.Generic.HashSet<int> deadlyIndices = new System.Collections.Generic.HashSet<int>();
+        HashSet<int> deadlyIndices = new HashSet<int>();
         int attempts = 0;
         while (deadlyIndices.Count < deadlySegmentCount && attempts < _segmentsPerPlatform * 2)
         {
             int randomIndex = Random.Range(0, _segmentsPerPlatform);
             
-            // Don't make gap segments deadly (they don't exist)
             if (!IsSegmentInGap(randomIndex, gapStart, gapSize))
             {
                 deadlyIndices.Add(randomIndex);
@@ -153,7 +193,6 @@ public class PlatformGenerator : MonoBehaviour
             attempts++;
         }
         
-        // Generate segments
         for (int seg = 0; seg < _segmentsPerPlatform; seg++)
         {
             if (IsSegmentInGap(seg, gapStart, gapSize))
@@ -162,14 +201,14 @@ public class PlatformGenerator : MonoBehaviour
             }
             
             bool isDeadly = deadlyIndices.Contains(seg);
-            CreatePlatformSegment(seg, platformParent.transform, platformIndex, isDeadly);
+            CreatePlatformSegment(seg, platformParent, isDeadly);
         }
     }
     
     /// <summary>
-    /// Creates single segment with specified material (safe or deadly).
+    /// Creates a single segment (ONLY during initial generation).
     /// </summary>
-    private void CreatePlatformSegment(int segmentIndex, Transform parent, int platformIndex, bool isDeadly)
+    private void CreatePlatformSegment(int segmentIndex, Transform parent, bool isDeadly)
     {
         float angle = segmentIndex * _degreesPerSegment;
         Quaternion rotation = Quaternion.Euler(0f, angle, 0f);
@@ -177,7 +216,6 @@ public class PlatformGenerator : MonoBehaviour
         GameObject segment = Instantiate(_platformSegmentPrefab, parent.position, rotation, parent);
         segment.name = $"Segment_{segmentIndex}";
         
-        // Assign material and tag
         MeshRenderer renderer = segment.GetComponent<MeshRenderer>();
         if (renderer != null)
         {
@@ -187,7 +225,7 @@ public class PlatformGenerator : MonoBehaviour
     }
     
     /// <summary>
-    /// Checks if segment is within gap range (handles circular wrapping).
+    /// Checks if segment is in gap range.
     /// </summary>
     private bool IsSegmentInGap(int segmentIndex, int gapStart, int gapSize)
     {
@@ -202,49 +240,79 @@ public class PlatformGenerator : MonoBehaviour
     }
     
     /// <summary>
-    /// Generates the final finish platform with no gaps and no deadly segments.
-    /// All segments tagged as "Finish" to trigger game completion.
+    /// Checks platforms to recycle based on ball position.
     /// </summary>
-    private void GenerateFinishPlatform()
+    private void CheckPlatformsToRecycle()
     {
-        int finishPlatformIndex = _actualPlatformCount;
-        float yPosition = -finishPlatformIndex * _platformSpacing;
-    
-        GameObject platformParent = new GameObject($"Platform_Finish");
-        platformParent.transform.SetParent(_helixContainer);
-        platformParent.transform.localPosition = new Vector3(0f, yPosition, 0f);
-    
-        // Generate all segments (no gaps, no deadly zones)
-        for (int seg = 0; seg < _segmentsPerPlatform; seg++)
+        if (_ball == null) return;
+        
+        float ballY = _ball.position.y;
+        int currentPlatformIndex = Mathf.FloorToInt(-ballY / _platformSpacing);
+        
+        // Process each platform passed since last check
+        for (int i = _highestPassedIndex + 1; i <= currentPlatformIndex; i++)
         {
-            CreateFinishSegment(seg, platformParent.transform);
+            // Get platform from pool by wrapping index
+            int poolIndex = i % _platformPool.Count;
+            GameObject platformToRecycle = _platformPool[poolIndex];
+            
+            // Reposition platform
+            RepositionPlatform(platformToRecycle);
+            
+            // Transfer cylinder for every platform after 4th
+            if (i >= _platformsBeforeCylinderTransfer)
+            {
+                TransferTopCylinderToBottom();
+            }
         }
+        
+        _highestPassedIndex = currentPlatformIndex;
+    }
     
-        Debug.Log($"<color=green>Finish platform generated at index {finishPlatformIndex}, Y={yPosition:F2}</color>");
+    /// <summary>
+    /// Repositions platform to bottom with new random Y rotation.
+    /// Platform keeps same segments but gets new rotation for variety.
+    /// </summary>
+    private void RepositionPlatform(GameObject platform)
+    {
+        if (platform == null) return;
+    
+        // Move to bottom
+        _lowestPlatformY -= _platformSpacing;
+        platform.transform.localPosition = new Vector3(0f, _lowestPlatformY, 0f);
+    
+        // Apply new random Y rotation
+        float randomYRotation = Random.Range(0f, 360f);
+        platform.transform.localRotation = Quaternion.Euler(0f, randomYRotation, 0f);
     }
 
+    
     /// <summary>
-    /// Creates a finish platform segment with special material and "Finish" tag.
+    /// Transfers the topmost cylinder to the bottom.
+    /// Called for every platform passed after the 4th.
     /// </summary>
-    private void CreateFinishSegment(int segmentIndex, Transform parent)
+    private void TransferTopCylinderToBottom()
     {
-        float angle = segmentIndex * _degreesPerSegment;
-        Quaternion rotation = Quaternion.Euler(0f, angle, 0f);
-    
-        GameObject segment = Instantiate(_platformSegmentPrefab, parent.position, rotation, parent);
-        segment.name = $"Segment_Finish_{segmentIndex}";
-    
-        // Assign finish material and tag
-        MeshRenderer renderer = segment.GetComponent<MeshRenderer>();
-        if (renderer != null)
-        {
-            if (_finishPlatformMaterial != null)
-            {
-                renderer.material = _finishPlatformMaterial;
-            }
+        if (_cylinders.Count == 0) return;
         
-            // Tag as Finish
-            segment.tag = "Finish";
+        // Find topmost cylinder
+        GameObject topCylinder = null;
+        float highestY = float.MinValue;
+        
+        foreach (GameObject cylinder in _cylinders)
+        {
+            float cylinderY = cylinder.transform.localPosition.y;
+            if (cylinderY > highestY)
+            {
+                highestY = cylinderY;
+                topCylinder = cylinder;
+            }
         }
+        
+        if (topCylinder == null) return;
+        
+        // Move to bottom
+        _lowestCylinderY -= _cylinderHeightPerSegment;
+        topCylinder.transform.localPosition = new Vector3(0f, _lowestCylinderY, 0f);
     }
 }
