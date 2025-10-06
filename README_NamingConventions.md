@@ -13,11 +13,11 @@ This document defines all naming standards for code, assets, and files in this p
 - **Rule**: Use nouns or noun phrases that describe the entity
 - **Examples**:
   ```
-  public class GameManager { }
+  public class AudioManager { }
   public class BallController { }
   public class PlatformGenerator { }
   public interface IInputProvider { }
-  public interface IScoreable { }
+  public interface IPoolable { }
   ```
 
 ### Method Names
@@ -26,27 +26,28 @@ This document defines all naming standards for code, assets, and files in this p
 - **Boolean methods**: Phrase as questions (Is/Has/Can prefix)
 - **Examples**:
   ```
-  public void StartGame() { }
-  public void IncrementScore() { }
-  public void GeneratePlatforms() { }
+  public void StartTimer() { }
+  public void AddScore(int points) { }
+  public void GeneratePlatformSegments() { }
+  public void TransferTopCylinderToBottom() { }
   
   // Boolean methods - question format
   public bool IsGameOver() { }
-  public bool HasPassedPlatform() { }
+  public bool IsNewHighScore(int score, float time) { }
   public bool CanRotate() { }
   ```
 
 ### Variable & Field Names
 
-#### Public Fields & Properties
+#### Internal Fields (internal keyword)
 - **Format**: PascalCase (no prefix)
-- **Usage**: Only for fields/properties accessed by other classes
+- **Usage**: For singleton instance access and controlled exposure
 - **Examples**:
   ```
-  public int CurrentScore;
-  public float RotationSpeed;
-  public GameObject BallPrefab;
-  public Transform PlayerTransform;
+  internal static AudioManager Instance { get; private set; }
+  internal int CurrentScore => _currentScore;
+  internal float HighScoreTime => _highScoreTime;
+  internal bool IsTimerRunning => _isTimerRunning;
   ```
 
 #### Private Fields
@@ -58,7 +59,9 @@ This document defines all naming standards for code, assets, and files in this p
   private float _elapsedTime;
   private bool _isGameRunning;
   private Transform _ballTransform;
-  private Rigidbody _ballRigidbody;
+  private Rigidbody _rigidbody;
+  private List<GameObject> _platformPool;
+  private Dictionary<int, GameObject> _platformsByIndex;
   ```
 
 #### SerializeField (Inspector-Exposed Private Fields)
@@ -67,9 +70,11 @@ This document defines all naming standards for code, assets, and files in this p
 - **Examples**:
   ```
   [SerializeField] private float _rotationSpeed = 150f;
-  [SerializeField] private GameObject _ballPrefab;
+  [SerializeField] private GameObject _platformSegmentPrefab;
   [SerializeField] private Material _safePlatformMaterial;
-  [SerializeField] private int _maxPlatforms = 50;
+  [SerializeField] private int _initialPlatformCount = 20;
+  [SerializeField] private AudioClip _ballBounceSFX;
+  [SerializeField] private Vector2Int _gapSizeRange = new Vector2Int(1, 3);
   ```
 
 #### Local Variables & Method Parameters
@@ -77,23 +82,23 @@ This document defines all naming standards for code, assets, and files in this p
 - **Usage**: Variables declared inside methods
 - **Examples**:
   ```
-  void CalculateScore(int platformIndex, float timeBonus)
+  void CheckPlatformPassed(float ballY, out int currentPlatformIndex)
   {
-      int finalScore = platformIndex * 10;
-      float multiplier = 1.5f;
-      bool isNewRecord = finalScore > _highScore;
+      int poolIndex = platformIndex % _platformPool.Count;
+      float randomYRotation = Random.Range(0f, 360f);
+      bool isNewRecord = score > _highScore;
   }
   ```
 
 ### Constants
-- **Format**: ALL_CAPS with underscores separating words
+- **Format**: ALL_CAPS with underscores separating words (unused in project)
+- **Alternative Format**: PascalCase for const fields (used in project)
 - **Usage**: For values that never change
 - **Examples**:
   ```
   private const int MAX_PLATFORMS = 50;
   private const float VERTICAL_SPACING = 2.0f;
   private const string HIGH_SCORE_KEY = "HighScore";
-  private const int SEGMENTS_PER_PLATFORM = 12;
   ```
 
 ### Events & Delegates
@@ -101,10 +106,9 @@ This document defines all naming standards for code, assets, and files in this p
 - **Usage**: For Unity events and custom delegates
 - **Examples**:
   ```
-  public event Action OnGameStart;
-  public event Action OnGameOver;
-  public event Action<int> OnScoreChanged;
-  public event Action<float> OnTimeUpdated;
+  internal event Action<int> OnScoreChanged;
+  internal event Action<int> OnComboChanged;
+  internal event Action<float> OnTimeChanged;
   ```
 
 ### Enumerations
@@ -112,19 +116,20 @@ This document defines all naming standards for code, assets, and files in this p
 - **Enum Values**: PascalCase
 - **Examples**:
   ```
+  public enum Difficulty
+  {
+      Easy,
+      Medium,
+      Hard,
+      Expert
+  }
+  
   public enum GameState
   {
       MainMenu,
       Playing,
       Paused,
       GameOver
-  }
-  
-  public enum PlatformType
-  {
-      Safe,
-      Deadly,
-      Bonus
   }
   ```
 
@@ -138,33 +143,32 @@ This document defines all naming standards for code, assets, and files in this p
 - **Examples**: 
   - `MainMenu.unity`
   - `MainGame.unity`
-  - `GameplayLevel1.unity`
 
 ### Prefabs
 - **Format**: PascalCase, nouns describing the object
 - **Convention**: No suffix needed (name describes what it is)
 - **Examples**: 
   - `Ball.prefab`
-  - `Platform.prefab`
   - `PlatformSegment.prefab`
-  - `MainMenuCanvas.prefab`
 
 ### Materials
 - **Format**: PascalCase with `_Mat` suffix
 - **Convention**: Suffix helps identify asset type quickly
 - **Examples**: 
   - `Ball_Mat.mat`
+  - `BallTrail_Mat.mat`
   - `Platform_Safe_Mat.mat`
   - `Platform_Deadly_Mat.mat`
-  - `Background_Mat.mat`
+  - `CentralPole_Mat.mat`
 
 ### Scripts (C# Files)
 - **Format**: PascalCase matching the class name exactly
 - **Rule**: Filename MUST match the class name inside (Unity requirement)
 - **Examples**: 
-  - `GameManager.cs` → contains `public class GameManager`
+  - `AudioManager.cs` → contains `public class AudioManager`
   - `InputHandler.cs` → contains `public class InputHandler`
   - `BallController.cs` → contains `public class BallController`
+  - `PlatformGenerator.cs` → contains `public class PlatformGenerator`
 
 ### Folders
 - **Format**: PascalCase for standard folders
@@ -173,37 +177,36 @@ This document defines all naming standards for code, assets, and files in this p
   - `_Scenes/` (underscore = appears at top of list)
   - `Scripts/`
   - `Prefabs/`
-  - `Core/` (subfolder - no underscore)
+  - `Managers/` (subfolder - no underscore)
   - `Gameplay/` (subfolder)
+  - `Input/` (subfolder)
+  - `UI/` (subfolder)
 
 ### 3D Models
-- **Format**: PascalCase, descriptive nouns
+- **Format**: PascalCase, descriptive nouns with `.fbx` extension
 - **Convention**: Name describes the object's function or appearance
 - **Examples**: 
   - `PlatformSegment.fbx`
-  - `Ball.fbx`
-  - `HelixTower.fbx`
-
-### Textures & Sprites
-- **Format**: PascalCase with descriptive suffix
-- **Examples**:
-  - `Button_Play.png`
-  - `Icon_Settings.png`
-  - `Background_Gradient.png`
 
 ### Audio Files
-- **Format**: PascalCase with descriptive prefix
+- **Format**: PascalCase with `_BGM` or `_SFX` suffix
+- **Extension**: `.ogg` (Vorbis format for WebGL)
 - **Examples**:
-  - `SFX_BallBounce.wav`
-  - `SFX_PlatformHit.wav`
-  - `Music_MainTheme.mp3`
+  - `MainMenu_BGM.ogg`
+  - `MainGame_BGM.ogg`
+  - `Ball_Bounce_SFX.ogg`
+  - `Button_Click_SFX.ogg`
+  - `Death_SFX.ogg`
+  - `Level_Win_SFX.ogg`
+  - `New_HighScore_SFX.ogg`
+  - `Platform_Clear_SFX.ogg`
 
 ---
 
 ## Code Style Guidelines
 
 ### Indentation & Spacing
-- **Indentation**: 4 spaces per level (or 1 tab configured as 4 spaces)
+- **Indentation**: 4 spaces per level (configured in JetBrains Rider)
 - **Never mix**: Tabs and spaces in the same file
 - **Blank lines**: Use single blank line to separate logical code blocks
 
@@ -212,14 +215,14 @@ This document defines all naming standards for code, assets, and files in this p
 - **Closing brace**: Same indentation as opening statement
 - **Example**:
   ```
-  void StartGame()
+  void StartTimer()
   {
-      _isGameRunning = true;
-      _currentScore = 0;
+      _sessionStartTime = Time.time;
+      _isTimerRunning = true;
       
-      if (_isGameRunning)
+      if (_isTimerRunning)
       {
-          StartTimer();
+          Debug.Log("Session timer started");
       }
   }
   ```
@@ -244,39 +247,42 @@ This document defines all naming standards for code, assets, and files in this p
 - **Example**:
   ```
   // Good - broken at logical point
-  UIManager.Instance.ShowGameOverScreen(
-      _currentScore, 
-      _currentTime, 
-      _highScore, 
-      _highScoreTime
+  GameObject segment = Instantiate(
+      _platformSegmentPrefab, 
+      parent.position, 
+      rotation, 
+      parent
   );
   ```
 
 ### Comments
 
-#### XML Documentation (Required for public members)
+#### XML Documentation (Required for internal/public members)
 ```
 /// <summary>
-/// Increments the player's score and checks for new high score.
+/// Checks if ball has passed a platform and awards score.
+/// Called every frame by BallController.
 /// </summary>
-/// <param name="points">Number of points to add to current score</param>
-public void AddScore(int points)
+/// <param name="ballY">Current Y position of the ball</param>
+/// <param name="currentPlatformIndex">Output parameter for current platform index</param>
+internal void CheckPlatformPassed(float ballY, out int currentPlatformIndex)
 {
-    _currentScore += points;
-    CheckHighScore();
+    currentPlatformIndex = Mathf.FloorToInt(-ballY / 4f);
+    // Implementation...
 }
 ```
 
-#### Inline Comments (Use sparingly)
+#### Inline Comments (Use for complex logic)
 ```
-// Only comment complex logic that isn't self-explanatory
-private void GeneratePlatform(int level)
+// Only comment non-obvious logic
+private void RepositionPlatform(GameObject platform)
 {
-    float yPosition = level * VERTICAL_SPACING;
+    _lowestPlatformY -= _platformSpacing;
+    platform.transform.localPosition = new Vector3(0f, _lowestPlatformY, 0f);
     
-    // Randomly skip 1-2 consecutive segments to create gap
-    int gapStart = Random.Range(0, SEGMENTS_PER_PLATFORM);
-    int gapSize = Random.Range(1, 3); // 1 or 2 segments
+    // Apply new random Y rotation for visual variety
+    float randomYRotation = Random.Range(0f, 360f);
+    platform.transform.localRotation = Quaternion.Euler(0f, randomYRotation, 0f);
 }
 ```
 
@@ -285,11 +291,12 @@ private void GeneratePlatform(int level)
 ## Unity-Specific Conventions
 
 ### MonoBehaviour Methods
-- **Order**: Keep Unity lifecycle methods at top of class in this order:
+- **Order**: Keep Unity lifecycle methods at top of class in execution order:
   ```
   public class ExampleClass : MonoBehaviour
   {
-      // 1. Serialized fields
+      // 1. Serialized fields with headers
+      [Header("Configuration")]
       [SerializeField] private float _speed;
       
       // 2. Private fields
@@ -302,8 +309,8 @@ private void GeneratePlatform(int level)
       private void FixedUpdate() { }
       private void LateUpdate() { }
       
-      // 4. Public methods
-      public void PublicMethod() { }
+      // 4. Internal methods (singleton access, getters)
+      internal void PublicMethod() { }
       
       // 5. Private methods
       private void PrivateMethod() { }
@@ -312,9 +319,12 @@ private void GeneratePlatform(int level)
 
 ### SerializeField Usage
 - **Always use** instead of making fields public unnecessarily
+- **Include [Header] and [Tooltip]** for organization in Inspector
 - **Example**:
   ```
   // ✅ CORRECT - Exposed to Inspector but encapsulated
+  [Header("Rotation Settings")]
+  [Tooltip("Base rotation speed in degrees per second")]
   [SerializeField] private float _rotationSpeed = 150f;
   
   // ❌ WRONG - Breaks encapsulation
@@ -325,18 +335,42 @@ private void GeneratePlatform(int level)
 - **Cache references** in Awake() or Start(), not Update()
 - **Example**:
   ```
-  private Rigidbody _rb;
+  private Rigidbody _rigidbody;
   
   private void Awake()
   {
-      _rb = GetComponent<Rigidbody>(); // Cache once
+      _rigidbody = GetComponent<Rigidbody>(); // Cache once
   }
   
   private void FixedUpdate()
   {
-      _rb.AddForce(Vector3.forward); // Use cached reference
+      _rigidbody.AddForce(Vector3.forward); // Use cached reference
   }
   ```
+
+### Singleton Pattern (Used for Managers)
+```
+public class AudioManager : MonoBehaviour
+{
+    internal static AudioManager Instance { get; private set; }
+    
+    private void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+            return;
+        }
+        
+        // Initialize...
+    }
+}
+```
 
 ---
 
@@ -363,31 +397,32 @@ private void GeneratePlatform(int level)
 
 5. **Ambiguous generic names**
    - Wrong: `temp`, `data`, `manager2`, `thing`
-   - Correct: `temporaryScore`, `platformData`, `audioManager`, `helixTower`
+   - Correct: `temporaryScore`, `platformData`, `audioManager`, `helixContainer`
 
 6. **Public fields without justification**
    - Wrong: `public int score;` (other scripts can modify directly)
    - Correct: `[SerializeField] private int _score;` (controlled access)
+   - Use `internal` properties for controlled external access
 
 7. **Magic numbers** (hardcoded values without explanation)
    - Wrong: `if (score > 1000)` (what is 1000?)
-   - Correct: `const int SCORE_THRESHOLD = 1000; if (score > SCORE_THRESHOLD)`
+   - Correct: Store in serialized field or add comment explaining significance
 
 ---
 
 ## ✅ DO USE:
 
 1. **Clear, self-documenting names**
-   - `RotatePlatform()` instead of `Rot()`
-   - `currentPlayerScore` instead of `cps`
+   - `RepositionPlatform()` instead of `Repos()`
+   - `currentPlatformIndex` instead of `cpi`
 
 2. **Consistent naming across project**
    - If you use `_Mat` suffix for materials, use it for ALL materials
    - If you prefix private fields with `_`, do it for ALL private fields
 
 3. **Standard abbreviations only**
-   - Common: `UI`, `ID`, `3D`, `2D`, `FPS`, `AI`
-   - Acceptable in context: `Pos` (Position), `Rot` (Rotation), `Col` (Color)
+   - Common: `UI`, `ID`, `3D`, `2D`, `FPS`, `BGM`, `SFX`
+   - Acceptable in context: `Pos` (Position), `Rot` (Rotation), `SFX` (Sound Effects)
 
 4. **Meaningful loop variables**
    - Simple loops: `for (int i = 0; i < count; i++)` ✅
@@ -406,59 +441,52 @@ private void GeneratePlatform(int level)
 
 ## Examples of Good Naming
 
-### Complete Class Example
+### Complete Class Example (from project)
 ```
 using UnityEngine;
+using System.Collections.Generic;
 
 /// <summary>
-/// Manages the helix tower rotation based on player input.
+/// Pure object pooling for infinite gameplay.
+/// Platforms generated once with random rotations, then only repositioned.
 /// </summary>
-public class HelixRotator : MonoBehaviour
+public class PlatformGenerator : MonoBehaviour
 {
-    // Constants
-    private const float MAX_ROTATION_SPEED = 500f;
+    [Header("Platform Configuration")]
+    [SerializeField] private GameObject _platformSegmentPrefab;
+    [SerializeField] private int _initialPlatformCount = 20;
+    [SerializeField] private float _platformSpacing = 4.0f;
     
-    // Serialized fields (Inspector-exposed)
-    [SerializeField] private float _rotationSpeed = 200f;
-    [SerializeField] private Transform _helixContainer;
+    [Header("Central Cylinder")]
+    [SerializeField] private Material _centralCylinderMaterial;
+    [SerializeField] private float _cylinderRadius = 0.3f;
     
-    // Private fields
-    private InputHandler _inputHandler;
-    private float _currentRotation;
-    private bool _canRotate;
+    // Object pooling
+    private List<GameObject> _platformPool = new List<GameObject>();
+    private int _highestPassedIndex = -1;
+    private float _lowestPlatformY = 0f;
     
-    // Unity lifecycle methods
-    private void Awake()
+    private void Start()
     {
-        _inputHandler = GetComponent<InputHandler>();
-        _canRotate = true;
+        GenerateCylinders();
+        GenerateInitialPlatforms();
     }
     
     private void Update()
     {
-        if (_canRotate)
-        {
-            RotateHelix();
-        }
+        CheckPlatformsToRecycle();
     }
     
-    // Public methods
-    public void EnableRotation()
+    /// <summary>
+    /// Repositions platform to bottom with new random Y rotation.
+    /// </summary>
+    private void RepositionPlatform(GameObject platform)
     {
-        _canRotate = true;
-    }
-    
-    public void DisableRotation()
-    {
-        _canRotate = false;
-    }
-    
-    // Private methods
-    private void RotateHelix()
-    {
-        float inputValue = _inputHandler.GetRotationInput();
-        _currentRotation = inputValue * _rotationSpeed * Time.deltaTime;
-        _helixContainer.Rotate(0f, _currentRotation, 0f);
+        _lowestPlatformY -= _platformSpacing;
+        platform.transform.localPosition = new Vector3(0f, _lowestPlatformY, 0f);
+        
+        float randomYRotation = Random.Range(0f, 360f);
+        platform.transform.localRotation = Quaternion.Euler(0f, randomYRotation, 0f);
     }
 }
 ```
@@ -467,23 +495,22 @@ public class HelixRotator : MonoBehaviour
 
 ## Enforcement
 
-These conventions are **mandatory** for all code submissions in this project.
+These conventions are **mandatory** for all code in this project.
 
 **Benefits of following these standards**:
 - Code is easier to read and maintain
-- Team members (or reviewers) can understand code quickly
+- Reviewers can understand implementation quickly
 - Reduces bugs from naming confusion
-- Professional presentation for portfolio/interviews
+- Professional presentation for portfolio
 
 **Reference Sources**:
 - Microsoft C# Naming Guidelines
 - Unity Style Guide Best Practices
-- Google C# Style Guide
+- JetBrains Rider code style recommendations
 - Industry-standard game development conventions
 
 ---
 
-**Last Updated**: October 5, 2025  
-**Project Phase**: Initial Setup  
-**Version**: 1.0
-```
+**Last Updated**: October 7, 2025  
+**Project Status**: Complete - Ready for Submission  
+**Development Time**: 3 days

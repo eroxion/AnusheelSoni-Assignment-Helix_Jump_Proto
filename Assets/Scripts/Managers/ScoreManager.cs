@@ -101,35 +101,52 @@ public class ScoreManager : MonoBehaviour
     
     /// <summary>
     /// Tracks ball position and awards score when passing platforms.
+    /// Now includes Platform_0 sound trigger.
     /// </summary>
     internal void CheckPlatformPassed(float ballY, out int currentPlatformIndex)
     {
         currentPlatformIndex = Mathf.FloorToInt(-ballY / 4f);
-    
-        for (int i = 1; i <= currentPlatformIndex; i++)
+        
+        // Check all platforms from 0 to current (including Platform_0)
+        for (int i = 0; i <= currentPlatformIndex; i++)
         {
             if (!_passedPlatformIndices.Contains(i))
             {
                 _passedPlatformIndices.Add(i);
                 _platformsPassed++;
-            
-                int pointsToAdd = _pointsPerPlatform;
-            
-                if (_useComboSystem)
+        
+                // For Platform_0: Play sound but don't award points (starting platform)
+                if (i == 0)
                 {
-                    _currentCombo = Mathf.Min(_currentCombo + 1, _maxCombo);
-                    int comboBonus = _currentCombo > 1 ? Mathf.RoundToInt(pointsToAdd * (_comboMultiplier - 1f) * (_currentCombo - 1)) : 0;
-                    pointsToAdd += comboBonus;
-                    OnComboChanged?.Invoke(_currentCombo);
+                    // Play platform clear sound for passing through starting platform
+                    if (AudioManager.Instance != null)
+                    {
+                        AudioManager.Instance.PlayPlatformClear();
+                    }
+                
+                    Debug.Log("Passed through Platform_0 (starting platform)");
                 }
-            
-                _currentScore += pointsToAdd;
-                OnScoreChanged?.Invoke(_currentScore);
-            
-                // Play platform clear sound
-                if (AudioManager.Instance != null)
+                else
                 {
-                    AudioManager.Instance.PlayPlatformClear();
+                    // For all other platforms: Award points AND play sound
+                    int pointsToAdd = _pointsPerPlatform;
+            
+                    if (_useComboSystem)
+                    {
+                        _currentCombo = Mathf.Min(_currentCombo + 1, _maxCombo);
+                        int comboBonus = _currentCombo > 1 ? Mathf.RoundToInt(pointsToAdd * (_comboMultiplier - 1f) * (_currentCombo - 1)) : 0;
+                        pointsToAdd += comboBonus;
+                        OnComboChanged?.Invoke(_currentCombo);
+                    }
+            
+                    _currentScore += pointsToAdd;
+                    OnScoreChanged?.Invoke(_currentScore);
+            
+                    // Play platform clear sound
+                    if (AudioManager.Instance != null)
+                    {
+                        AudioManager.Instance.PlayPlatformClear();
+                    }
                 }
             }
         }

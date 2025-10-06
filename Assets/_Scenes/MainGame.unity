@@ -1924,7 +1924,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_RenderShadows: 1
+  m_RenderShadows: 0
   m_RequiresDepthTextureOption: 2
   m_RequiresOpaqueTextureOption: 2
   m_CameraType: 0
@@ -1935,7 +1935,7 @@ MonoBehaviour:
     m_Bits: 1
   m_VolumeTrigger: {fileID: 0}
   m_VolumeFrameworkUpdateModeOption: 2
-  m_RenderPostProcessing: 1
+  m_RenderPostProcessing: 0
   m_Antialiasing: 0
   m_AntialiasingQuality: 2
   m_StopNaN: 0
@@ -1970,7 +1970,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CameraController
   _target: {fileID: 1115299880}
   _followSpeed: 0.06
-  _offset: {x: 0, y: 6, z: -10}
+  _offset: {x: 0, y: 4, z: -10}
 --- !u!1 &330853955
 GameObject:
   m_ObjectHideFlags: 0
@@ -7217,7 +7217,7 @@ MonoBehaviour:
   m_ReferencePixelsPerUnit: 100
   m_ScaleFactor: 1
   m_ReferenceResolution: {x: 540, y: 960}
-  m_ScreenMatchMode: 0
+  m_ScreenMatchMode: 1
   m_MatchWidthOrHeight: 0.5
   m_PhysicalUnit: 3
   m_FallbackScreenDPI: 96
@@ -9191,6 +9191,9 @@ MonoBehaviour:
   _deadlyPlatformMaterial: {fileID: 2100000, guid: 4de2b7fe0a4a28947b3286ae4900a310, type: 2}
   _centralCylinderMaterial: {fileID: 2100000, guid: 2a385f5b4a8467a4cab7ecdb95a4ad14, type: 2}
   _cylinderRadius: 2
+  _cylinderHeightPerSegment: 4
+  _cylindersAboveStart: 3
+  _platformsBeforeCylinderTransfer: 4
   _helixContainer: {fileID: 1596419718}
   _ball: {fileID: 1115299880}
 --- !u!1 &1509341355
