@@ -10,6 +10,7 @@ public class MainMenuManager : MonoBehaviour
     [Header("UI Panels")]
     [SerializeField] private GameObject _mainMenuPanel;
     [SerializeField] private GameObject _difficultyPanel;
+    [SerializeField] private GameObject _settingsPanel;
     
     private void Start()
     {
@@ -60,6 +61,18 @@ public class MainMenuManager : MonoBehaviour
     {
         _mainMenuPanel.SetActive(true);
         _difficultyPanel.SetActive(false);
+        _settingsPanel.SetActive(false);
+    }
+    
+    public void OnSettingsButton()
+    {
+        _mainMenuPanel.SetActive(false);
+        _settingsPanel.SetActive(true);
+    }
+
+    public void OnBackFromSettings()
+    {
+        ShowMainMenu();
     }
     
     /// <summary>
