@@ -199,31 +199,28 @@ public class BallController : MonoBehaviour
             HandleSafeCollision(collision);
         }
     }
-
     
     /// <summary>
     /// Handles safe platform collision with consistent bounce.
-    /// Scoring handled separately in CheckPlatformPassage() (position-based).
     /// </summary>
     private void HandleSafeCollision(Collision collision)
     {
         // Apply calculated bounce velocity
         _rigidbody.linearVelocity = Vector3.up * _calculatedBounceVelocity;
-    
+        
+        // Play bounce sound
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayBallBounce();
+        }
+        
         // Break combo on bounce
         if (ScoreManager.Instance != null)
         {
             ScoreManager.Instance.ResetCombo();
         }
-    
-        if (_showDebugInfo)
-        {
-            Debug.Log($"<color=lime>Bounce!</color> Platform: {_currentPlatformIndex}, " +
-                      $"Velocity: {_calculatedBounceVelocity:F2} m/s, " +
-                      $"Will reach: {_targetBounceHeight:F2}m");
-        }
     }
-    
+
     /// <summary>
     /// Handles deadly platform collision - triggers game over.
     /// </summary>
@@ -231,38 +228,38 @@ public class BallController : MonoBehaviour
     {
         _isGameOver = true;
         
+        // Play death sound
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayDeath();
+        }
+        
         // Stop physics
         _rigidbody.linearVelocity = Vector3.zero;
         _rigidbody.angularVelocity = Vector3.zero;
         _rigidbody.isKinematic = true;
         
-        // Disable trail
         if (_trailRenderer != null)
         {
             _trailRenderer.emitting = false;
         }
         
-        // Disable helix rotation
         HelixRotator rotator = FindAnyObjectByType<HelixRotator>();
         if (rotator != null)
         {
             rotator.DisableRotation();
         }
         
-        // Stop timer if running (important for early deaths)
         if (ScoreManager.Instance != null)
         {
-            ScoreManager.Instance.StopTimer(); // Stop timer before UI shows
+            ScoreManager.Instance.StopTimer();
             ScoreManager.Instance.OnGameOver();
         }
         
-        // Show game over UI (AFTER stopping timer)
         if (UIManager.Instance != null)
         {
             UIManager.Instance.ShowGameOverScreen();
         }
-        
-        Debug.Log("<color=red>Game Over!</color> Ball hit deadly platform.");
     }
 
     /// <summary>
@@ -272,38 +269,38 @@ public class BallController : MonoBehaviour
     {
         _isGameOver = true;
         
+        // Play level win sound
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayLevelWin();
+        }
+        
         // Stop physics
         _rigidbody.linearVelocity = Vector3.zero;
         _rigidbody.angularVelocity = Vector3.zero;
         _rigidbody.isKinematic = true;
         
-        // Keep trail enabled for finish (visual feedback)
         if (_trailRenderer != null)
         {
             _trailRenderer.emitting = false;
         }
         
-        // Disable helix rotation
         HelixRotator rotator = FindAnyObjectByType<HelixRotator>();
         if (rotator != null)
         {
             rotator.DisableRotation();
         }
         
-        // Stop timer before showing UI
         if (ScoreManager.Instance != null)
         {
-            ScoreManager.Instance.StopTimer(); // Stop timer first
+            ScoreManager.Instance.StopTimer();
             ScoreManager.Instance.OnGameComplete();
         }
         
-        // Show victory UI (AFTER stopping timer)
         if (UIManager.Instance != null)
         {
             UIManager.Instance.ShowVictoryScreen();
         }
-        
-        Debug.Log("<color=lime>🎉 LEVEL COMPLETE!</color> You reached the finish platform!");
     }
     
     /// <summary>

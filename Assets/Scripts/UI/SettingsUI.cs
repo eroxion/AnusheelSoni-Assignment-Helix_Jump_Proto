@@ -260,10 +260,16 @@ public class SettingsUI : MonoBehaviour
     /// </summary>
     public void OnResetButtonClicked()
     {
+        // Play button click sound
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayButtonClick();
+        }
+    
         if (SettingsManager.Instance != null)
         {
             SettingsManager.Instance.ResetToDefaults();
-            LoadSettingsToUI(); // Refresh UI with new defaults
+            LoadSettingsToUI();
         }
     }
 }

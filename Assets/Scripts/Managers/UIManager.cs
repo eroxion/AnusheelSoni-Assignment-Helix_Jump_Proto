@@ -52,7 +52,7 @@ public class UIManager : MonoBehaviour
         UpdateScoreDisplay(0);
         UpdateTimeDisplay(0f);
         HideAllScreens();
-        HideHUD(); // Start with HUD hidden
+        HideHUD();
     }
     
     private void OnDestroy()
@@ -89,7 +89,6 @@ public class UIManager : MonoBehaviour
                 _countdownText.text = seconds.ToString();
                 _countdownText.gameObject.SetActive(true);
                 
-                // Keep score and time hidden during countdown
                 if (_scoreText != null)
                 {
                     _scoreText.gameObject.SetActive(false);
@@ -114,11 +113,13 @@ public class UIManager : MonoBehaviour
             _countdownText.text = "GO!";
             _countdownText.gameObject.SetActive(true);
             
-            // Schedule HUD to appear after 1 second
             Invoke(nameof(HideCountdownAndShowHUD), 1f);
         }
     }
     
+    /// <summary>
+    /// Hides countdown and shows HUD after "GO!" message.
+    /// </summary>
     private void HideCountdownAndShowHUD()
     {
         if (_countdownText != null)
@@ -126,7 +127,24 @@ public class UIManager : MonoBehaviour
             _countdownText.gameObject.SetActive(false);
         }
         
-        // Show score and time
+        ShowHUD();
+        
+        if (ScoreManager.Instance != null)
+        {
+            ScoreManager.Instance.StartTimer();
+        }
+        
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayMainGameBGM();
+        }
+    }
+    
+    /// <summary>
+    /// Shows HUD elements (score and time).
+    /// </summary>
+    private void ShowHUD()
+    {
         if (_scoreText != null)
         {
             _scoreText.gameObject.SetActive(true);
@@ -136,11 +154,26 @@ public class UIManager : MonoBehaviour
         {
             _timeText.gameObject.SetActive(true);
         }
-        
-        // Start timer
-        if (ScoreManager.Instance != null)
+    }
+    
+    /// <summary>
+    /// Hides all HUD elements.
+    /// </summary>
+    private void HideHUD()
+    {
+        if (_scoreText != null)
         {
-            ScoreManager.Instance.StartTimer();
+            _scoreText.gameObject.SetActive(false);
+        }
+        
+        if (_timeText != null)
+        {
+            _timeText.gameObject.SetActive(false);
+        }
+        
+        if (_countdownText != null)
+        {
+            _countdownText.gameObject.SetActive(false);
         }
     }
     
@@ -151,7 +184,6 @@ public class UIManager : MonoBehaviour
     {
         if (_gameOverPanel == null) return;
         
-        // Cancel any pending HUD show
         CancelInvoke(nameof(HideCountdownAndShowHUD));
         HideHUD();
         
@@ -162,7 +194,7 @@ public class UIManager : MonoBehaviour
             int finalScore = ScoreManager.Instance.CurrentScore;
             int highScore = ScoreManager.Instance.HighScore;
             float finalTime = ScoreManager.Instance.CurrentSessionTime;
-            float highScoreTime = ScoreManager.Instance.HighScoreTime; // CHANGED: Use high score time
+            float highScoreTime = ScoreManager.Instance.HighScoreTime;
             
             if (_gameOverFinalScore != null)
             {
@@ -181,15 +213,12 @@ public class UIManager : MonoBehaviour
             
             if (_gameOverBestTime != null)
             {
-                // CHANGED: Show time associated with high score
                 string highScoreTimeText = ScoreManager.Instance.FormatTime(highScoreTime);
                 _gameOverBestTime.text = $"Best Time: {highScoreTimeText}";
             }
         }
-        
-        Debug.Log("Game Over screen displayed");
     }
-
+    
     /// <summary>
     /// Shows victory screen with final scores and time.
     /// </summary>
@@ -197,7 +226,6 @@ public class UIManager : MonoBehaviour
     {
         if (_victoryPanel == null) return;
         
-        // Cancel any pending HUD show
         CancelInvoke(nameof(HideCountdownAndShowHUD));
         HideHUD();
         
@@ -208,7 +236,7 @@ public class UIManager : MonoBehaviour
             int finalScore = ScoreManager.Instance.CurrentScore;
             int highScore = ScoreManager.Instance.HighScore;
             float finalTime = ScoreManager.Instance.CurrentSessionTime;
-            float highScoreTime = ScoreManager.Instance.HighScoreTime; // CHANGED: Use high score time
+            float highScoreTime = ScoreManager.Instance.HighScoreTime;
             
             if (_victoryFinalScore != null)
             {
@@ -227,10 +255,8 @@ public class UIManager : MonoBehaviour
             
             if (_victoryBestTime != null)
             {
-                // CHANGED: Show time associated with high score
                 string highScoreTimeText = ScoreManager.Instance.FormatTime(highScoreTime);
                 
-                // Highlight if this run achieved new high score
                 bool isNewHighScore = (finalScore > highScore) || 
                                      (finalScore == highScore && finalTime < highScoreTime);
                 
@@ -244,29 +270,6 @@ public class UIManager : MonoBehaviour
                 }
             }
         }
-        
-        Debug.Log("Victory screen displayed");
-    }
-    
-    /// <summary>
-    /// Hides all HUD elements (score, time, countdown).
-    /// </summary>
-    private void HideHUD()
-    {
-        if (_scoreText != null)
-        {
-            _scoreText.gameObject.SetActive(false);
-        }
-    
-        if (_timeText != null)
-        {
-            _timeText.gameObject.SetActive(false);
-        }
-    
-        if (_countdownText != null)
-        {
-            _countdownText.gameObject.SetActive(false);
-        }
     }
     
     private void HideAllScreens()
@@ -275,16 +278,32 @@ public class UIManager : MonoBehaviour
         if (_victoryPanel != null) _victoryPanel.SetActive(false);
     }
     
+    /// <summary>
+    /// Restarts the current scene.
+    /// PUBLIC because called by UI Button onClick.
+    /// </summary>
     public void RestartGame()
     {
-        Debug.Log("Restarting game...");
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayButtonClick();
+        }
+        
         Time.timeScale = 1f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
     
+    /// <summary>
+    /// Exits to main menu.
+    /// PUBLIC because called by UI Button onClick.
+    /// </summary>
     public void ExitToMainMenu()
     {
-        Debug.Log("Exiting to Main Menu...");
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayButtonClick();
+        }
+        
         Time.timeScale = 1f;
         
         if (Application.CanStreamedLevelBeLoaded("MainMenu"))
@@ -293,7 +312,6 @@ public class UIManager : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("MainMenu scene not found in Build Settings!");
             SceneManager.LoadScene(SceneManager.GetActiveScene().name);
         }
     }

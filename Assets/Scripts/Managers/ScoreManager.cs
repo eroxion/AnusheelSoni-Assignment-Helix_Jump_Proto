@@ -100,21 +100,21 @@ public class ScoreManager : MonoBehaviour
     }
     
     /// <summary>
-    /// Awards points when ball passes through platform gaps (position-based).
+    /// Tracks ball position and awards score when passing platforms.
     /// </summary>
-    internal void CheckPlatformPassed(float ballYPosition, out int currentPlatformIndex)
+    internal void CheckPlatformPassed(float ballY, out int currentPlatformIndex)
     {
-        currentPlatformIndex = Mathf.FloorToInt(-ballYPosition / 4f);
-        
+        currentPlatformIndex = Mathf.FloorToInt(-ballY / 4f);
+    
         for (int i = 1; i <= currentPlatformIndex; i++)
         {
             if (!_passedPlatformIndices.Contains(i))
             {
                 _passedPlatformIndices.Add(i);
                 _platformsPassed++;
-                
+            
                 int pointsToAdd = _pointsPerPlatform;
-                
+            
                 if (_useComboSystem)
                 {
                     _currentCombo = Mathf.Min(_currentCombo + 1, _maxCombo);
@@ -122,12 +122,15 @@ public class ScoreManager : MonoBehaviour
                     pointsToAdd += comboBonus;
                     OnComboChanged?.Invoke(_currentCombo);
                 }
-                
+            
                 _currentScore += pointsToAdd;
                 OnScoreChanged?.Invoke(_currentScore);
-                
-                string comboText = _useComboSystem ? $", Combo: x{_currentCombo}" : "";
-                Debug.Log($"Platform {i} passed! Score: {_currentScore} (+{pointsToAdd}){comboText}, Total: {_platformsPassed}");
+            
+                // Play platform clear sound
+                if (AudioManager.Instance != null)
+                {
+                    AudioManager.Instance.PlayPlatformClear();
+                }
             }
         }
     }
@@ -171,22 +174,27 @@ public class ScoreManager : MonoBehaviour
     
     /// <summary>
     /// Called on game over to check and save high score with time.
-    /// Works for both death and victory scenarios.
     /// </summary>
     internal void OnGameOver()
     {
         StopTimer();
-    
+
         if (IsNewHighScore(_currentScore, _currentSessionTime))
         {
             bool wasScoreIncrease = _currentScore > _highScore;
             bool wasTimeTiebreaker = _currentScore == _highScore && _currentSessionTime < _highScoreTime;
-            
+        
             _highScore = _currentScore;
             _highScoreTime = _currentSessionTime;
             SaveHighScore();
             SaveHighScoreTime();
-            
+        
+            // Play new high score sound
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayNewHighScore();
+            }
+        
             if (wasScoreIncrease)
             {
                 Debug.Log($"<color=yellow>🏆 New High Score! {_highScore} (Time: {FormatTime(_highScoreTime)})</color>");
@@ -196,30 +204,31 @@ public class ScoreManager : MonoBehaviour
                 Debug.Log($"<color=yellow>🏆 New High Score! Same score ({_highScore}) but faster time: {FormatTime(_highScoreTime)}</color>");
             }
         }
-        else
-        {
-            Debug.Log($"Game Over. Score: {_currentScore}, High Score: {_highScore}, Time: {FormatTime(_currentSessionTime)}");
-        }
     }
     
     /// <summary>
     /// Called when player reaches finish platform (game completion).
-    /// Uses same high score logic as game over.
     /// </summary>
     internal void OnGameComplete()
     {
         StopTimer();
-    
+
         if (IsNewHighScore(_currentScore, _currentSessionTime))
         {
             bool wasScoreIncrease = _currentScore > _highScore;
             bool wasTimeTiebreaker = _currentScore == _highScore && _currentSessionTime < _highScoreTime;
-            
+        
             _highScore = _currentScore;
             _highScoreTime = _currentSessionTime;
             SaveHighScore();
             SaveHighScoreTime();
-            
+        
+            // Play new high score sound
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayNewHighScore();
+            }
+        
             if (wasScoreIncrease)
             {
                 Debug.Log($"<color=lime>🎉 Level Complete! 🏆 New High Score! {_highScore} (Time: {FormatTime(_highScoreTime)})</color>");
@@ -228,14 +237,6 @@ public class ScoreManager : MonoBehaviour
             {
                 Debug.Log($"<color=lime>🎉 Level Complete! 🏆 New High Score! Same score ({_highScore}) but faster time: {FormatTime(_highScoreTime)}</color>");
             }
-            else
-            {
-                Debug.Log($"<color=lime>🎉 Level Complete! Score: {_currentScore}, Time: {FormatTime(_currentSessionTime)}</color>");
-            }
-        }
-        else
-        {
-            Debug.Log($"<color=lime>🎉 Level Complete! Score: {_currentScore}, High Score: {_highScore}, Time: {FormatTime(_currentSessionTime)}</color>");
         }
     }
     
