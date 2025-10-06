@@ -82,14 +82,16 @@ public class BallController : MonoBehaviour
     private void Update()
     {
         CheckPlatformPassage();
-        
-        // Show countdown
-        if (!_gravityEnabled && _showCountdown)
+    
+        // Show countdown UI
+        if (!_gravityEnabled && UIManager.Instance != null)
         {
             float timeRemaining = _gravityStartTime - Time.time;
-            if (timeRemaining > 0 && Time.frameCount % 60 == 0) // Update every 60 frames (~1 second)
+        
+            if (timeRemaining > 0)
             {
-                Debug.Log($"<color=yellow>Starting in {Mathf.Ceil(timeRemaining)}...</color>");
+                int secondsRemaining = Mathf.CeilToInt(timeRemaining);
+                UIManager.Instance.UpdateCountdown(secondsRemaining);
             }
         }
     }
@@ -102,6 +104,13 @@ public class BallController : MonoBehaviour
         if (!_gravityEnabled && Time.time >= _gravityStartTime)
         {
             _gravityEnabled = true;
+        
+            // Show "GO!" message
+            if (UIManager.Instance != null)
+            {
+                UIManager.Instance.ShowGoMessage();
+            }
+        
             if (_showCountdown)
             {
                 Debug.Log("<color=lime>GO! Gravity enabled!</color>");
@@ -114,7 +123,6 @@ public class BallController : MonoBehaviour
             ApplyGravity();
         }
     }
-
     
     /// <summary>
     /// Calculates gravity and bounce velocity to achieve target height with desired frequency.
@@ -207,70 +215,87 @@ public class BallController : MonoBehaviour
         }
     }
     
+    /// <summary>
+    /// Handles deadly platform collision - triggers game over.
+    /// </summary>
     private void HandleDeadlyCollision()
     {
         _isGameOver = true;
         
-        _rigidbody.linearVelocity = Vector3.zero;
-        _rigidbody.angularVelocity = Vector3.zero;
-        _rigidbody.isKinematic = true;
-        
-        if (_trailRenderer != null)
-        {
-            _trailRenderer.emitting = false;
-        }
-        
-        HelixRotator rotator = FindAnyObjectByType<HelixRotator>();
-        if (rotator != null)
-        {
-            rotator.DisableRotation();
-        }
-        
-        if (ScoreManager.Instance != null)
-        {
-            ScoreManager.Instance.OnGameOver();
-        }
-        
-        Debug.Log("<color=red>Game Over!</color> Ball hit deadly platform.");
-    }
-    
-    /// <summary>
-    /// Handles collision with finish platform - triggers game completion.
-    /// </summary>
-    private void HandleFinishCollision()
-    {
-        _isGameOver = true;
-    
         // Stop physics
         _rigidbody.linearVelocity = Vector3.zero;
         _rigidbody.angularVelocity = Vector3.zero;
         _rigidbody.isKinematic = true;
-    
-        // Keep trail enabled for finish (visual feedback)
+        
+        // Disable trail
         if (_trailRenderer != null)
         {
             _trailRenderer.emitting = false;
         }
-    
+        
         // Disable helix rotation
         HelixRotator rotator = FindAnyObjectByType<HelixRotator>();
         if (rotator != null)
         {
             rotator.DisableRotation();
         }
-    
-        // Report game completion
+        
+        // Stop timer if running (important for early deaths)
         if (ScoreManager.Instance != null)
         {
-            ScoreManager.Instance.OnGameComplete();
+            ScoreManager.Instance.StopTimer(); // Stop timer before UI shows
+            ScoreManager.Instance.OnGameOver();
         }
-    
-        Debug.Log("<color=lime>🎉 LEVEL COMPLETE! You reached the finish platform!</color>");
-    
-        // TODO: Show victory UI
-        // UIManager.Instance.ShowVictoryScreen();
+        
+        // Show game over UI (AFTER stopping timer)
+        if (UIManager.Instance != null)
+        {
+            UIManager.Instance.ShowGameOverScreen();
+        }
+        
+        Debug.Log("<color=red>Game Over!</color> Ball hit deadly platform.");
     }
 
+    /// <summary>
+    /// Handles collision with finish platform - triggers game completion.
+    /// </summary>
+    private void HandleFinishCollision()
+    {
+        _isGameOver = true;
+        
+        // Stop physics
+        _rigidbody.linearVelocity = Vector3.zero;
+        _rigidbody.angularVelocity = Vector3.zero;
+        _rigidbody.isKinematic = true;
+        
+        // Keep trail enabled for finish (visual feedback)
+        if (_trailRenderer != null)
+        {
+            _trailRenderer.emitting = false;
+        }
+        
+        // Disable helix rotation
+        HelixRotator rotator = FindAnyObjectByType<HelixRotator>();
+        if (rotator != null)
+        {
+            rotator.DisableRotation();
+        }
+        
+        // Stop timer before showing UI
+        if (ScoreManager.Instance != null)
+        {
+            ScoreManager.Instance.StopTimer(); // Stop timer first
+            ScoreManager.Instance.OnGameComplete();
+        }
+        
+        // Show victory UI (AFTER stopping timer)
+        if (UIManager.Instance != null)
+        {
+            UIManager.Instance.ShowVictoryScreen();
+        }
+        
+        Debug.Log("<color=lime>🎉 LEVEL COMPLETE!</color> You reached the finish platform!");
+    }
     
     /// <summary>
     /// Tracks ball position and awards score when passing platforms.
