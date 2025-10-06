@@ -260,47 +260,69 @@ public class ScoreManager : MonoBehaviour
     }
     
     /// <summary>
-    /// Loads high score from PlayerPrefs.
+    /// Loads high score from PlayerPrefs for current difficulty.
     /// </summary>
     private void LoadHighScore()
     {
-        _highScore = PlayerPrefs.GetInt("HighScore", 0);
-    }
-    
-    /// <summary>
-    /// Saves high score to PlayerPrefs.
-    /// </summary>
-    private void SaveHighScore()
-    {
-        PlayerPrefs.SetInt("HighScore", _highScore);
-        PlayerPrefs.Save();
-    }
-    
-    /// <summary>
-    /// Loads high score time from PlayerPrefs.
-    /// </summary>
-    private void LoadHighScoreTime()
-    {
-        _highScoreTime = PlayerPrefs.GetFloat("HighScoreTime", 999999f);
-    
-        if (_highScoreTime >= 999999f)
+        if (DifficultyManager.Instance != null)
         {
-            Debug.Log("No high score time recorded yet");
+            _highScore = DifficultyManager.Instance.GetCurrentDifficultyHighScore();
+            Debug.Log($"Loaded high score for {DifficultyManager.Instance.CurrentDifficulty}: {_highScore}");
         }
         else
         {
-            Debug.Log($"Loaded high score time: {FormatTime(_highScoreTime)}");
+            _highScore = 0;
+            Debug.Log("No high score recorded yet");
+        }
+    }
+    
+    /// <summary>
+    /// Saves high score to PlayerPrefs for current difficulty.
+    /// </summary>
+    private void SaveHighScore()
+    {
+        if (DifficultyManager.Instance != null)
+        {
+            DifficultyManager.Instance.SaveCurrentDifficultyHighScore(_highScore);
+            Debug.Log($"High score saved for {DifficultyManager.Instance.CurrentDifficulty}: {_highScore}");
+        }
+    }
+    
+    /// <summary>
+    /// Loads high score time for current difficulty.
+    /// </summary>
+    private void LoadHighScoreTime()
+    {
+        if (DifficultyManager.Instance != null)
+        {
+            _highScoreTime = DifficultyManager.Instance.GetCurrentDifficultyHighScoreTime();
+        
+            if (_highScoreTime > 0)
+            {
+                Debug.Log($"Loaded high score time for {DifficultyManager.Instance.CurrentDifficulty}: {FormatTime(_highScoreTime)}");
+            }
+            else
+            {
+                Debug.Log($"No high score time recorded yet for {DifficultyManager.Instance.CurrentDifficulty}");
+            }
+        }
+        else
+        {
+            _highScoreTime = 0f;
+            Debug.Log("No high score time recorded yet");
         }
     }
 
     /// <summary>
-    /// Saves high score time to PlayerPrefs.
+    /// Saves high score time for current difficulty.
     /// </summary>
     private void SaveHighScoreTime()
     {
-        PlayerPrefs.SetFloat("HighScoreTime", _highScoreTime);
-        PlayerPrefs.Save();
-        Debug.Log($"High score time saved: {FormatTime(_highScoreTime)}");
+        if (DifficultyManager.Instance != null)
+        {
+            DifficultyManager.Instance.SaveCurrentDifficultyHighScoreTime(_highScoreTime);
+            Debug.Log($"High score time saved for {DifficultyManager.Instance.CurrentDifficulty}: {FormatTime(_highScoreTime)}");
+        }
     }
 
     /// <summary>

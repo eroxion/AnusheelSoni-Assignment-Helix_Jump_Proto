@@ -49,17 +49,18 @@ public class PlatformGenerator : MonoBehaviour
     
     private void Start()
     {
-        // Apply difficulty settings if available
+        // Apply difficulty settings (updates existing _deadlySegmentsRange Vector2Int)
         if (DifficultyManager.Instance != null)
         {
-            _deadlySegmentsRange = DifficultyManager.Instance.DeadlySegmentsRange;
+            _deadlySegmentsRange.x = DifficultyManager.Instance.MinDeadlySegments;
+            _deadlySegmentsRange.y = DifficultyManager.Instance.MaxDeadlySegments;
             Debug.Log($"Applied difficulty: Deadly Segments {_deadlySegmentsRange.x}-{_deadlySegmentsRange.y}");
         }
     
+        // Generate level
         GenerateCentralCylinder();
         GenerateAllPlatforms();
     }
-
     
     private void GenerateCentralCylinder()
     {

@@ -2,10 +2,6 @@ using UnityEngine;
 using TMPro;
 using UnityEngine.SceneManagement;
 
-/// <summary>
-/// Manages all UI elements and screen transitions.
-/// Handles score display, time display, game over screen, victory screen, and countdown.
-/// </summary>
 public class UIManager : MonoBehaviour
 {
     internal static UIManager Instance { get; private set; }
@@ -14,6 +10,7 @@ public class UIManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI _scoreText;
     [SerializeField] private TextMeshProUGUI _timeText;
     [SerializeField] private TextMeshProUGUI _countdownText;
+    [SerializeField] private TextMeshProUGUI _controlHintText;  // ADD THIS
     
     [Header("Game Over Screen")]
     [SerializeField] private GameObject _gameOverPanel;
@@ -53,6 +50,9 @@ public class UIManager : MonoBehaviour
         UpdateTimeDisplay(0f);
         HideAllScreens();
         HideHUD();
+        
+        // Show control hints
+        ShowControlHints();
     }
     
     private void OnDestroy()
@@ -80,6 +80,33 @@ public class UIManager : MonoBehaviour
         }
     }
     
+    /// <summary>
+    /// Shows device-specific control hints.
+    /// </summary>
+    private void ShowControlHints()
+    {
+        if (_controlHintText == null) return;
+        
+        InputHandler inputHandler = FindAnyObjectByType<InputHandler>();
+        
+        if (inputHandler != null)
+        {
+            _controlHintText.text = inputHandler.GetControlHint();
+            _controlHintText.gameObject.SetActive(true);
+        }
+    }
+    
+    /// <summary>
+    /// Hides control hints.
+    /// </summary>
+    private void HideControlHints()
+    {
+        if (_controlHintText != null)
+        {
+            _controlHintText.gameObject.SetActive(false);
+        }
+    }
+    
     internal void UpdateCountdown(int seconds)
     {
         if (_countdownText != null)
@@ -98,6 +125,9 @@ public class UIManager : MonoBehaviour
                 {
                     _timeText.gameObject.SetActive(false);
                 }
+                
+                // Keep control hints visible during countdown
+                ShowControlHints();
             }
             else
             {
@@ -113,13 +143,13 @@ public class UIManager : MonoBehaviour
             _countdownText.text = "GO!";
             _countdownText.gameObject.SetActive(true);
             
+            // Hide control hints when "GO!" appears
+            HideControlHints();
+            
             Invoke(nameof(HideCountdownAndShowHUD), 1f);
         }
     }
     
-    /// <summary>
-    /// Hides countdown and shows HUD after "GO!" message.
-    /// </summary>
     private void HideCountdownAndShowHUD()
     {
         if (_countdownText != null)
@@ -140,9 +170,6 @@ public class UIManager : MonoBehaviour
         }
     }
     
-    /// <summary>
-    /// Shows HUD elements (score and time).
-    /// </summary>
     private void ShowHUD()
     {
         if (_scoreText != null)
@@ -156,9 +183,6 @@ public class UIManager : MonoBehaviour
         }
     }
     
-    /// <summary>
-    /// Hides all HUD elements.
-    /// </summary>
     private void HideHUD()
     {
         if (_scoreText != null)
@@ -175,11 +199,13 @@ public class UIManager : MonoBehaviour
         {
             _countdownText.gameObject.SetActive(false);
         }
+        
+        if (_controlHintText != null)
+        {
+            _controlHintText.gameObject.SetActive(false);
+        }
     }
     
-    /// <summary>
-    /// Shows game over screen with final scores and time.
-    /// </summary>
     internal void ShowGameOverScreen()
     {
         if (_gameOverPanel == null) return;
@@ -219,9 +245,6 @@ public class UIManager : MonoBehaviour
         }
     }
     
-    /// <summary>
-    /// Shows victory screen with final scores and time.
-    /// </summary>
     internal void ShowVictoryScreen()
     {
         if (_victoryPanel == null) return;
@@ -278,10 +301,6 @@ public class UIManager : MonoBehaviour
         if (_victoryPanel != null) _victoryPanel.SetActive(false);
     }
     
-    /// <summary>
-    /// Restarts the current scene.
-    /// PUBLIC because called by UI Button onClick.
-    /// </summary>
     public void RestartGame()
     {
         if (AudioManager.Instance != null)
@@ -293,10 +312,6 @@ public class UIManager : MonoBehaviour
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
     
-    /// <summary>
-    /// Exits to main menu.
-    /// PUBLIC because called by UI Button onClick.
-    /// </summary>
     public void ExitToMainMenu()
     {
         if (AudioManager.Instance != null)

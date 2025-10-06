@@ -1,9 +1,9 @@
 using UnityEngine;
 
 /// <summary>
-/// Controls helix rotation based on player input.
+/// Controls helix rotation based on player input with smooth damping.
 /// Each input type has its own sensitivity from SettingsManager.
-/// Single rotation multiplier applies to all input types.
+/// Smoothing provides better feel and prevents jerky rotation.
 /// </summary>
 public class HelixRotator : MonoBehaviour
 {
@@ -14,9 +14,17 @@ public class HelixRotator : MonoBehaviour
     [Tooltip("Global rotation multiplier for all inputs.\nFormula: InputSpeed × Multiplier = degrees/second\nExample: KeyboardSpeed 1.1 × 200 = 220 deg/s")]
     [SerializeField] private float _rotationMultiplier = 200f;
     
+    [Header("Smoothing")]
+    [Tooltip("Smoothing factor: Higher = smoother but less responsive")]
+    [SerializeField] [Range(0.1f, 1f)] private float _smoothingFactor = 0.65f;
+    
     private bool _isRotationEnabled = true;
     private bool _isDragging = false;
     private Vector2 _lastInputPosition;
+    
+    // Smoothing variables
+    private float _currentRotationVelocity = 0f;
+    private float _targetRotationSpeed = 0f;
     
     private void Awake()
     {
@@ -28,13 +36,28 @@ public class HelixRotator : MonoBehaviour
     
     private void Update()
     {
-        if (!_isRotationEnabled) return;
-        
-        float rotationDelta = GetInputDelta();
-        
-        if (Mathf.Abs(rotationDelta) > 0.001f)
+        if (!_isRotationEnabled)
         {
-            _helixTransform.Rotate(Vector3.up, rotationDelta * Time.deltaTime);
+            // Smoothly stop rotation when disabled
+            _targetRotationSpeed = 0f;
+            _currentRotationVelocity = Mathf.Lerp(_currentRotationVelocity, 0f, Time.deltaTime * 10f);
+            return;
+        }
+        
+        // Get target rotation speed from input
+        _targetRotationSpeed = GetInputDelta();
+        
+        // Smooth the rotation using Lerp
+        _currentRotationVelocity = Mathf.Lerp(
+            _currentRotationVelocity, 
+            _targetRotationSpeed, 
+            1f - _smoothingFactor
+        );
+        
+        // Apply smoothed rotation
+        if (Mathf.Abs(_currentRotationVelocity) > 0.001f)
+        {
+            _helixTransform.Rotate(Vector3.up, _currentRotationVelocity * Time.deltaTime);
         }
     }
     
@@ -179,5 +202,7 @@ public class HelixRotator : MonoBehaviour
     internal void EnableRotation()
     {
         _isRotationEnabled = true;
+        _currentRotationVelocity = 0f;
+        _targetRotationSpeed = 0f;
     }
 }

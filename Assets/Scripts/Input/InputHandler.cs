@@ -70,21 +70,25 @@ public class InputHandler : MonoBehaviour
     /// Returns appropriate control hint based on device type.
     /// Used for displaying controls to player during countdown.
     /// </summary>
+    /// <summary>
+    /// Returns appropriate control hint based on device type.
+    /// Used for displaying controls to player during countdown.
+    /// </summary>
     internal string GetControlHint()
     {
         switch (_detectedDevice)
         {
             case DeviceType.Mobile:
                 return "Swipe left or right to rotate";
-                
+            
             case DeviceType.Tablet:
                 return "Drag left or right to rotate";
-                
+            
             case DeviceType.Desktop:
             default:
                 if (Input.mousePresent)
                 {
-                    return "Use A/D keys or drag with mouse to rotate";
+                    return "Use A/D or Arrow keys\nor drag with mouse to rotate";
                 }
                 return "Use A/D or Arrow keys to rotate";
         }
