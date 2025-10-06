@@ -274,5 +274,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BallController
   _rigidbody: {fileID: 5725892726258002356}
   _trailRenderer: {fileID: 7935294166918639191}
-  _bounceHeight: 3
-  _gravityForce: 20
+  _targetBounceHeight: 2.8
+  _bounceFrequency: 1.75
+  _showDebugInfo: 0

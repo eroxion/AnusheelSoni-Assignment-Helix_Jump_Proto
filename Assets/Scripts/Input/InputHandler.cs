@@ -44,8 +44,8 @@ public class InputHandler : MonoBehaviour
     [Header("Debug Info")]
     [SerializeField] private bool _showDebugInfo = false;
     
-    private bool _isDragging = false;
-    private float _currentInputDelta = 0f;
+    private bool _isDragging;
+    private float _currentInputDelta;
     private Vector2 _lastInputPosition;
     private DeviceType _detectedDevice;
     
@@ -54,6 +54,12 @@ public class InputHandler : MonoBehaviour
         Desktop,
         Mobile,
         Tablet
+    }
+
+    private void Awake()
+    {
+        _isDragging = false;
+        _currentInputDelta = 0f;
     }
     
     private void Start()

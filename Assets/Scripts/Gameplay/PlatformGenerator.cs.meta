@@ -7,6 +7,8 @@ MonoImporter:
   - _platformSegmentPrefab: {fileID: 6601122931779391503, guid: ff85c4696c21a984692092f4223c1a4f, type: 3}
   - _safePlatformMaterial: {fileID: 2100000, guid: a94149b650373a7429ee7320c5774bce, type: 2}
   - _deadlyPlatformMaterial: {fileID: 2100000, guid: 4de2b7fe0a4a28947b3286ae4900a310, type: 2}
+  - _finishPlatformMaterial: {fileID: 2100000, guid: 928086a05387d95418d34d63c9a1e195, type: 2}
+  - _centralCylinderMaterial: {fileID: 2100000, guid: 2a385f5b4a8467a4cab7ecdb95a4ad14, type: 2}
   - _helixContainer: {instanceID: 0}
   executionOrder: 0
   icon: {instanceID: 0}

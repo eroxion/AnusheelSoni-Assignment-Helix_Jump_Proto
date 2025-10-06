@@ -17,11 +17,13 @@ public class HelixRotator : MonoBehaviour
     [Tooltip("Smoothing factor for rotation (0 = instant, 1 = very smooth)")]
     [SerializeField] [Range(0f, 1f)] private float _rotationSmoothing = 0.1f;
     
-    private float _currentRotationVelocity = 0f;
-    private bool _canRotate = true;
+    private float _currentRotationVelocity;
+    private bool _canRotate;
     
     private void Awake()
     {
+        _currentRotationVelocity = 0f;
+        _canRotate = true;
         // Auto-find components if not assigned
         if (_inputHandler == null)
         {

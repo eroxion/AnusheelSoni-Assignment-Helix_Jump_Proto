@@ -2,8 +2,8 @@ using UnityEngine;
 
 /// <summary>
 /// Controls ball physics with custom bounce system.
-/// Uses FixedUpdate for physics calculations to ensure consistent behavior.
-/// Implements consistent bounce height using kinematic equations: v = √(2gh)
+/// Independent bounce height and bounce frequency control.
+/// Bounce height is always achieved regardless of gravity.
 /// </summary>
 public class BallController : MonoBehaviour
 {
@@ -11,19 +11,37 @@ public class BallController : MonoBehaviour
     [SerializeField] private Rigidbody _rigidbody;
     [SerializeField] private TrailRenderer _trailRenderer;
     
+    [Header("Game Start Settings")]
+    [Tooltip("Delay before gravity starts (gives player time to prepare)")]
+    [SerializeField] private float _gravityStartDelay = 3f;
+
+    [Tooltip("Show countdown in console")]
+    [SerializeField] private bool _showCountdown = true;
+    
     [Header("Bounce Settings")]
-    [Tooltip("Target height ball reaches after each bounce (in units)")]
-    [SerializeField] private float _bounceHeight = 3f;
+    [Tooltip("Target height ball reaches after each bounce (always achieved)")]
+    [SerializeField] private float _targetBounceHeight = 3f;
     
-    [Tooltip("Gravity magnitude applied to ball (positive value)")]
-    [SerializeField] private float _gravityForce = 20f;
+    [Tooltip("Bounce frequency: How fast ball bounces (affects gravity and speed)")]
+    [SerializeField] [Range(0.1f, 10f)] private float _bounceFrequency = 3f;
     
-    private bool _isGameOver = false;
-    private Vector3 _customGravity;
+    [Header("Advanced Settings")]
+    [Tooltip("Show physics calculations in console")]
+    [SerializeField] private bool _showDebugInfo = false;
+    
+    private bool _gravityEnabled;
+    private float _gravityStartTime;
+    private bool _isGameOver;
+    private float _calculatedGravity;
+    private float _calculatedBounceVelocity;
+    private int _currentPlatformIndex;
     
     private void Awake()
     {
-        // Cache component references
+        _gravityEnabled = false;
+        _isGameOver = false;
+        _currentPlatformIndex = -1;
+        
         if (_rigidbody == null)
         {
             _rigidbody = GetComponent<Rigidbody>();
@@ -37,86 +55,198 @@ public class BallController : MonoBehaviour
     
     private void Start()
     {
-        // Configure Rigidbody for manual physics control
         if (_rigidbody != null)
         {
-            _rigidbody.useGravity = false; // Disable Unity gravity
+            _rigidbody.useGravity = false;
             _rigidbody.collisionDetectionMode = CollisionDetectionMode.Continuous;
             _rigidbody.interpolation = RigidbodyInterpolation.Interpolate;
         }
-        
-        // Calculate custom gravity vector
-        _customGravity = Vector3.down * _gravityForce;
-        
-        // Enable trail emission
+    
         if (_trailRenderer != null)
         {
             _trailRenderer.emitting = true;
         }
+    
+        RecalculatePhysics();
+    
+        // Set gravity start time
+        _gravityStartTime = Time.time + _gravityStartDelay;
+        _gravityEnabled = false;
+    
+        if (_showCountdown)
+        {
+            Debug.Log($"<color=yellow>Game starting in {_gravityStartDelay:F1} seconds...</color>");
+        }
     }
     
-    /// <summary>
-    /// FixedUpdate: Called at fixed intervals for consistent physics.
-    /// Proper method for all Rigidbody physics manipulation.
-    /// </summary>
+    private void Update()
+    {
+        CheckPlatformPassage();
+        
+        // Show countdown
+        if (!_gravityEnabled && _showCountdown)
+        {
+            float timeRemaining = _gravityStartTime - Time.time;
+            if (timeRemaining > 0 && Time.frameCount % 60 == 0) // Update every 60 frames (~1 second)
+            {
+                Debug.Log($"<color=yellow>Starting in {Mathf.Ceil(timeRemaining)}...</color>");
+            }
+        }
+    }
+    
     private void FixedUpdate()
     {
         if (_isGameOver) return;
+    
+        // Check if gravity should start
+        if (!_gravityEnabled && Time.time >= _gravityStartTime)
+        {
+            _gravityEnabled = true;
+            if (_showCountdown)
+            {
+                Debug.Log("<color=lime>GO! Gravity enabled!</color>");
+            }
+        }
+    
+        // Only apply gravity if enabled
+        if (_gravityEnabled)
+        {
+            ApplyGravity();
+        }
+    }
+
+    
+    /// <summary>
+    /// Calculates gravity and bounce velocity to achieve target height with desired frequency.
+    /// 
+    /// Physics explanation:
+    /// - Bounce frequency controls how fast the ball cycle completes
+    /// - Higher frequency = stronger gravity + higher velocity = faster bouncing
+    /// - Lower frequency = weaker gravity + lower velocity = slower bouncing
+    /// - Height remains constant regardless of frequency
+    /// 
+    /// Formulas:
+    /// Time to reach peak: t = sqrt(2h/g)
+    /// But we want to control frequency, so we invert:
+    /// g = 2h * (frequency)²
+    /// v = sqrt(2gh) = sqrt(2 * 2h * frequency² * h) = 2h * frequency
+    /// </summary>
+    private void RecalculatePhysics()
+    {
+        // Calculate gravity based on bounce frequency
+        // Higher frequency = stronger gravity = faster bouncing
+        _calculatedGravity = 2f * _targetBounceHeight * (_bounceFrequency * _bounceFrequency);
         
-        ApplyGravity();
+        // Calculate bounce velocity to reach target height with calculated gravity
+        // v = sqrt(2 * g * h)
+        _calculatedBounceVelocity = Mathf.Sqrt(2f * _calculatedGravity * _targetBounceHeight);
+        
+        if (_showDebugInfo)
+        {
+            float timeToReachPeak = _calculatedBounceVelocity / _calculatedGravity;
+            float totalBounceTime = timeToReachPeak * 2f;
+            
+            Debug.Log($"<color=cyan>Physics Recalculated:</color>\n" +
+                      $"Target Height: {_targetBounceHeight:F2}m\n" +
+                      $"Bounce Frequency: {_bounceFrequency:F2}x\n" +
+                      $"Calculated Gravity: {_calculatedGravity:F2} m/s²\n" +
+                      $"Bounce Velocity: {_calculatedBounceVelocity:F2} m/s\n" +
+                      $"Time to Peak: {timeToReachPeak:F2}s\n" +
+                      $"Full Bounce Cycle: {totalBounceTime:F2}s");
+        }
     }
     
     /// <summary>
-    /// Applies custom gravity force using ForceMode.Acceleration.
+    /// Applies calculated gravity force.
     /// </summary>
     private void ApplyGravity()
     {
-        _rigidbody.AddForce(_customGravity, ForceMode.Acceleration);
+        Vector3 gravity = Vector3.down * _calculatedGravity;
+        _rigidbody.AddForce(gravity, ForceMode.Acceleration);
     }
     
-    /// <summary>
-    /// Detects collisions with platform segments.
-    /// </summary>
     private void OnCollisionEnter(Collision collision)
     {
         if (_isGameOver) return;
-        
+    
         if (collision.gameObject.CompareTag("Deadly"))
         {
             HandleDeadlyCollision();
+        }
+        else if (collision.gameObject.CompareTag("Finish"))
+        {
+            HandleFinishCollision();
         }
         else if (collision.gameObject.CompareTag("Safe"))
         {
             HandleSafeCollision(collision);
         }
     }
+
     
     /// <summary>
     /// Handles safe platform collision with consistent bounce.
-    /// Uses physics formula: v = √(2gh) for consistent bounce height.
+    /// Scoring handled separately in CheckPlatformPassage() (position-based).
     /// </summary>
     private void HandleSafeCollision(Collision collision)
     {
-        // Calculate required velocity to reach target bounce height
-        float bounceVelocity = Mathf.Sqrt(2f * _gravityForce * _bounceHeight);
-        
-        // Set upward velocity directly for consistent bounce
-        _rigidbody.linearVelocity = Vector3.up * bounceVelocity;
+        // Apply calculated bounce velocity
+        _rigidbody.linearVelocity = Vector3.up * _calculatedBounceVelocity;
+    
+        // Break combo on bounce
+        if (ScoreManager.Instance != null)
+        {
+            ScoreManager.Instance.ResetCombo();
+        }
+    
+        if (_showDebugInfo)
+        {
+            Debug.Log($"<color=lime>Bounce!</color> Platform: {_currentPlatformIndex}, " +
+                      $"Velocity: {_calculatedBounceVelocity:F2} m/s, " +
+                      $"Will reach: {_targetBounceHeight:F2}m");
+        }
     }
     
-    /// <summary>
-    /// Handles deadly platform collision - triggers game over.
-    /// </summary>
     private void HandleDeadlyCollision()
     {
         _isGameOver = true;
+        
+        _rigidbody.linearVelocity = Vector3.zero;
+        _rigidbody.angularVelocity = Vector3.zero;
+        _rigidbody.isKinematic = true;
+        
+        if (_trailRenderer != null)
+        {
+            _trailRenderer.emitting = false;
+        }
+        
+        HelixRotator rotator = FindAnyObjectByType<HelixRotator>();
+        if (rotator != null)
+        {
+            rotator.DisableRotation();
+        }
+        
+        if (ScoreManager.Instance != null)
+        {
+            ScoreManager.Instance.OnGameOver();
+        }
+        
+        Debug.Log("<color=red>Game Over!</color> Ball hit deadly platform.");
+    }
     
-        // Stop ball physics
+    /// <summary>
+    /// Handles collision with finish platform - triggers game completion.
+    /// </summary>
+    private void HandleFinishCollision()
+    {
+        _isGameOver = true;
+    
+        // Stop physics
         _rigidbody.linearVelocity = Vector3.zero;
         _rigidbody.angularVelocity = Vector3.zero;
         _rigidbody.isKinematic = true;
     
-        // Disable trail
+        // Keep trail enabled for finish (visual feedback)
         if (_trailRenderer != null)
         {
             _trailRenderer.emitting = false;
@@ -129,9 +259,37 @@ public class BallController : MonoBehaviour
             rotator.DisableRotation();
         }
     
-        Debug.Log("Game Over! Ball hit deadly platform.");
+        // Report game completion
+        if (ScoreManager.Instance != null)
+        {
+            ScoreManager.Instance.OnGameComplete();
+        }
+    
+        Debug.Log("<color=lime>🎉 LEVEL COMPLETE! You reached the finish platform!</color>");
+    
+        // TODO: Show victory UI
+        // UIManager.Instance.ShowVictoryScreen();
     }
 
+    
+    /// <summary>
+    /// Tracks ball position and awards score when passing platforms.
+    /// Position-based to trigger immediately when gap is passed.
+    /// </summary>
+    private void CheckPlatformPassage()
+    {
+        float ballY = transform.position.y;
+    
+        if (ScoreManager.Instance != null)
+        {
+            ScoreManager.Instance.CheckPlatformPassed(ballY, out _currentPlatformIndex);
+        }
+        else
+        {
+            // Fallback if ScoreManager not available
+            _currentPlatformIndex = Mathf.FloorToInt(-ballY / 4f);
+        }
+    }
     
     /// <summary>
     /// Resets ball to initial state for restart.
@@ -139,34 +297,56 @@ public class BallController : MonoBehaviour
     internal void ResetBall(Vector3 startPosition)
     {
         _isGameOver = false;
-        
+    
         _rigidbody.isKinematic = false;
         _rigidbody.linearVelocity = Vector3.zero;
         _rigidbody.angularVelocity = Vector3.zero;
-        
+    
         transform.position = startPosition;
-        
+    
         if (_trailRenderer != null)
         {
             _trailRenderer.Clear();
             _trailRenderer.emitting = true;
         }
+    
+        // Reset gravity delay
+        _gravityStartTime = Time.time + _gravityStartDelay;
+        _gravityEnabled = false;
+    
+        if (_showCountdown)
+        {
+            Debug.Log($"<color=yellow>Game restarting in {_gravityStartDelay:F1} seconds...</color>");
+        }
     }
+
     
     /// <summary>
-    /// Adjusts bounce height at runtime.
+    /// Updates target bounce height at runtime and recalculates physics.
     /// </summary>
     internal void SetBounceHeight(float height)
     {
-        _bounceHeight = Mathf.Max(0.1f, height);
+        _targetBounceHeight = Mathf.Max(0.1f, height);
+        RecalculatePhysics();
     }
     
     /// <summary>
-    /// Adjusts gravity at runtime.
+    /// Updates bounce frequency at runtime and recalculates physics.
     /// </summary>
-    internal void SetGravity(float gravity)
+    internal void SetBounceFrequency(float frequency)
     {
-        _gravityForce = Mathf.Max(1f, gravity);
-        _customGravity = Vector3.down * _gravityForce;
+        _bounceFrequency = Mathf.Clamp(frequency, 0.1f, 10f);
+        RecalculatePhysics();
+    }
+    
+    /// <summary>
+    /// Called by Inspector when values change (Editor only).
+    /// </summary>
+    private void OnValidate()
+    {
+        if (Application.isPlaying)
+        {
+            RecalculatePhysics();
+        }
     }
 }

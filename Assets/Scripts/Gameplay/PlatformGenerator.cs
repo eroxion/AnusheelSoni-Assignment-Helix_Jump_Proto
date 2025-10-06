@@ -2,49 +2,48 @@ using UnityEngine;
 
 /// <summary>
 /// Generates helix tower with procedurally created platforms.
-/// 
-/// IMPORTANT: Platform count logic
-/// - Inspector value = number of VISIBLE platforms user sees (e.g., 50)
-/// - Actual generated = Inspector value + 1 (e.g., 51 total)
-/// - Reason: Platform_0 is empty (starting point), so visual count starts from Platform_1
-/// - Game design: Cleaner start, pole top visible, better player orientation
-/// 
-/// Generation: Downward from Y=0 (Platform_0 at origin, others below)
+/// Platform_0 is empty (starting point), actual platforms start from Platform_1.
+/// Platforms generate downward from parent position.
 /// </summary>
 public class PlatformGenerator : MonoBehaviour
 {
     [Header("Platform Configuration")]
-    [Tooltip("Number of VISIBLE platforms (actual generated = this + 1, because Platform_0 is empty)")]
     [SerializeField] private GameObject _platformSegmentPrefab;
     [SerializeField] private int _platformCount = 50;
     [SerializeField] private float _platformSpacing = 4.0f;
     
     [Header("Segment Configuration")]
     [SerializeField] private int _segmentsPerPlatform = 12;
-    [SerializeField] private int _minGapSize = 1;
-    [SerializeField] private int _maxGapSize = 3;
+    
+    [Header("Gap Size Range")]
+    [Tooltip("Gap size range: [Min, Max] segments missing per platform")]
+    [SerializeField] private Vector2Int _gapSizeRange = new Vector2Int(1, 3);
+    
+    [Header("Deadly Segments Range")]
+    [Tooltip("Deadly segments range: [Min, Max] deadly segments per platform")]
+    [SerializeField] private Vector2Int _deadlySegmentsRange = new Vector2Int(0, 3);
     
     [Header("Materials")]
     [SerializeField] private Material _safePlatformMaterial;
     [SerializeField] private Material _deadlyPlatformMaterial;
-    [SerializeField] [Range(0f, 1f)] private float _deadlySegmentChance = 0.2f;
+    
+    [Header("Finish Platform")]
+    [Tooltip("Material for final finish platform (no gaps, no deadly segments)")]
+    [SerializeField] private Material _finishPlatformMaterial;
     
     [Header("Central Cylinder")]
     [SerializeField] private Material _centralCylinderMaterial;
-    [SerializeField] private float _cylinderRadius = 2f;
+    [SerializeField] private float _cylinderRadius = 0.3f;
     
     [Header("Organization")]
     [SerializeField] private Transform _helixContainer;
     
     private float _degreesPerSegment;
-    private int _actualPlatformCount; // Visual platforms + 1 empty starting platform
+    private int _actualPlatformCount;
     
     private void Awake()
     {
         _degreesPerSegment = 360f / _segmentsPerPlatform;
-        
-        // Add 1 to platform count for empty starting platform (Platform_0)
-        // Visual platforms: 50 (Platform_1 to Platform_50 have segments)
         _actualPlatformCount = _platformCount + 1;
     }
     
@@ -54,10 +53,6 @@ public class PlatformGenerator : MonoBehaviour
         GenerateAllPlatforms();
     }
     
-    /// <summary>
-    /// Creates central pole spanning from Platform_0 (Y=0) to bottom platform.
-    /// Positioned at center of tower for proper visual alignment.
-    /// </summary>
     private void GenerateCentralCylinder()
     {
         if (_helixContainer == null)
@@ -65,44 +60,30 @@ public class PlatformGenerator : MonoBehaviour
             Debug.LogError("PlatformGenerator: Helix Container not assigned!");
             return;
         }
-        
+    
         GameObject cylinder = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
         cylinder.name = "CentralPole";
         cylinder.transform.SetParent(_helixContainer);
-        
-        // Calculate tower height from Platform_0 (Y=0) to last platform
-        float totalHeight = (_actualPlatformCount - 1) * _platformSpacing;
-        
-        // Position cylinder at center of tower
-        // Tower spans from Y=0 to Y=-totalHeight
-        // Center = -totalHeight/2
+    
+        // Include finish platform in height calculation
+        float totalHeight = _actualPlatformCount * _platformSpacing; // +1 for finish platform
         float cylinderY = -totalHeight / 2f;
         cylinder.transform.localPosition = new Vector3(0f, cylinderY, 0f);
-        
-        // Scale cylinder (Unity cylinder default height = 2, so divide by 2)
+    
         float cylinderScaleY = totalHeight / 2f;
-        cylinder.transform.localScale = new Vector3(
-            _cylinderRadius * 2f,  // Diameter = radius * 2
-            cylinderScaleY,
-            _cylinderRadius * 2f
-        );
-        
-        // Apply material
+        cylinder.transform.localScale = new Vector3(_cylinderRadius * 2f, cylinderScaleY, _cylinderRadius * 2f);
+    
         if (_centralCylinderMaterial != null)
         {
             cylinder.GetComponent<MeshRenderer>().material = _centralCylinderMaterial;
         }
-        
-        // Remove collider (visual only, no physics interaction)
-        Destroy(cylinder.GetComponent<Collider>());
-        
-        Debug.Log($"Cylinder: Height={totalHeight:F2}, Position Y={cylinderY:F2}, " +
-                  $"Spans from Y=0 (top) to Y={-totalHeight:F2} (bottom)");
-    }
     
-    /// <summary>
-    /// Generates all platform levels including empty starting platform.
-    /// </summary>
+        Destroy(cylinder.GetComponent<Collider>());
+    
+        Debug.Log($"Cylinder: Height={totalHeight:F2}, Y={cylinderY:F2} (includes finish platform)");
+    }
+
+    
     private void GenerateAllPlatforms()
     {
         if (_platformSegmentPrefab == null || _helixContainer == null)
@@ -110,43 +91,60 @@ public class PlatformGenerator : MonoBehaviour
             Debug.LogError("PlatformGenerator: Missing prefab or container!");
             return;
         }
-        
-        // Generate actual platform count (includes empty Platform_0)
+    
+        // Generate all platforms including empty Platform_0
         for (int i = 0; i < _actualPlatformCount; i++)
         {
             GenerateSinglePlatform(i);
         }
-        
-        Debug.Log($"Generated {_actualPlatformCount} total platforms " +
-                  $"({_platformCount} visible + 1 empty starting platform).");
+    
+        // Generate final finish platform (after all normal platforms)
+        GenerateFinishPlatform();
+    
+        Debug.Log($"Generated {_actualPlatformCount} platforms ({_platformCount} visible + 1 empty) + 1 finish platform.");
     }
     
     /// <summary>
-    /// Generates single platform at index position.
-    /// Platform_0 is empty (no segments) for clean starting point.
-    /// Other platforms have segments with random gaps.
+    /// Generates single platform with random gap and deadly segments.
+    /// Platform_0 is empty (no segments).
     /// </summary>
     private void GenerateSinglePlatform(int platformIndex)
     {
-        // Calculate Y position downward from origin
         float yPosition = -platformIndex * _platformSpacing;
         
-        // Create platform parent GameObject
         GameObject platformParent = new GameObject($"Platform_{platformIndex}");
         platformParent.transform.SetParent(_helixContainer);
         platformParent.transform.localPosition = new Vector3(0f, yPosition, 0f);
         
-        // Platform_0 is empty (starting point) - no segments generated
-        // Provides clean visual start and clear view of pole top
+        // Platform_0 is empty (starting point)
         if (platformIndex == 0)
         {
             return;
         }
         
-        // Generate segments for all other platforms
+        // Randomly determine gap size within range
+        int gapSize = Random.Range(_gapSizeRange.x, _gapSizeRange.y + 1);
         int gapStart = Random.Range(0, _segmentsPerPlatform);
-        int gapSize = Random.Range(_minGapSize, _maxGapSize);
         
+        // Randomly determine number of deadly segments within range
+        int deadlySegmentCount = Random.Range(_deadlySegmentsRange.x, _deadlySegmentsRange.y + 1);
+        
+        // Randomly select which segments will be deadly (excluding gap segments)
+        System.Collections.Generic.HashSet<int> deadlyIndices = new System.Collections.Generic.HashSet<int>();
+        int attempts = 0;
+        while (deadlyIndices.Count < deadlySegmentCount && attempts < _segmentsPerPlatform * 2)
+        {
+            int randomIndex = Random.Range(0, _segmentsPerPlatform);
+            
+            // Don't make gap segments deadly (they don't exist)
+            if (!IsSegmentInGap(randomIndex, gapStart, gapSize))
+            {
+                deadlyIndices.Add(randomIndex);
+            }
+            attempts++;
+        }
+        
+        // Generate segments
         for (int seg = 0; seg < _segmentsPerPlatform; seg++)
         {
             if (IsSegmentInGap(seg, gapStart, gapSize))
@@ -154,14 +152,15 @@ public class PlatformGenerator : MonoBehaviour
                 continue;
             }
             
-            CreatePlatformSegment(seg, platformParent.transform, platformIndex);
+            bool isDeadly = deadlyIndices.Contains(seg);
+            CreatePlatformSegment(seg, platformParent.transform, platformIndex, isDeadly);
         }
     }
     
     /// <summary>
-    /// Creates single segment at specified rotation angle.
+    /// Creates single segment with specified material (safe or deadly).
     /// </summary>
-    private void CreatePlatformSegment(int segmentIndex, Transform parent, int platformIndex)
+    private void CreatePlatformSegment(int segmentIndex, Transform parent, int platformIndex, bool isDeadly)
     {
         float angle = segmentIndex * _degreesPerSegment;
         Quaternion rotation = Quaternion.Euler(0f, angle, 0f);
@@ -169,7 +168,13 @@ public class PlatformGenerator : MonoBehaviour
         GameObject segment = Instantiate(_platformSegmentPrefab, parent.position, rotation, parent);
         segment.name = $"Segment_{segmentIndex}";
         
-        AssignSegmentMaterial(segment);
+        // Assign material and tag
+        MeshRenderer renderer = segment.GetComponent<MeshRenderer>();
+        if (renderer != null)
+        {
+            renderer.material = isDeadly ? _deadlyPlatformMaterial : _safePlatformMaterial;
+            segment.tag = isDeadly ? "Deadly" : "Safe";
+        }
     }
     
     /// <summary>
@@ -188,16 +193,49 @@ public class PlatformGenerator : MonoBehaviour
     }
     
     /// <summary>
-    /// Randomly assigns safe or deadly material to segment.
+    /// Generates the final finish platform with no gaps and no deadly segments.
+    /// All segments tagged as "Finish" to trigger game completion.
     /// </summary>
-    private void AssignSegmentMaterial(GameObject segment)
+    private void GenerateFinishPlatform()
     {
+        int finishPlatformIndex = _actualPlatformCount;
+        float yPosition = -finishPlatformIndex * _platformSpacing;
+    
+        GameObject platformParent = new GameObject($"Platform_Finish");
+        platformParent.transform.SetParent(_helixContainer);
+        platformParent.transform.localPosition = new Vector3(0f, yPosition, 0f);
+    
+        // Generate all segments (no gaps, no deadly zones)
+        for (int seg = 0; seg < _segmentsPerPlatform; seg++)
+        {
+            CreateFinishSegment(seg, platformParent.transform);
+        }
+    
+        Debug.Log($"<color=green>Finish platform generated at index {finishPlatformIndex}, Y={yPosition:F2}</color>");
+    }
+
+    /// <summary>
+    /// Creates a finish platform segment with special material and "Finish" tag.
+    /// </summary>
+    private void CreateFinishSegment(int segmentIndex, Transform parent)
+    {
+        float angle = segmentIndex * _degreesPerSegment;
+        Quaternion rotation = Quaternion.Euler(0f, angle, 0f);
+    
+        GameObject segment = Instantiate(_platformSegmentPrefab, parent.position, rotation, parent);
+        segment.name = $"Segment_Finish_{segmentIndex}";
+    
+        // Assign finish material and tag
         MeshRenderer renderer = segment.GetComponent<MeshRenderer>();
-        if (renderer == null) return;
+        if (renderer != null)
+        {
+            if (_finishPlatformMaterial != null)
+            {
+                renderer.material = _finishPlatformMaterial;
+            }
         
-        bool isDeadly = Random.value < _deadlySegmentChance;
-        
-        renderer.material = isDeadly ? _deadlyPlatformMaterial : _safePlatformMaterial;
-        segment.tag = isDeadly ? "Deadly" : "Safe";
+            // Tag as Finish
+            segment.tag = "Finish";
+        }
     }
 }
