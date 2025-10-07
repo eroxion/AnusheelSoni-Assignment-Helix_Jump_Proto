@@ -113,11 +113,10 @@ public class BallController : MonoBehaviour
         if (!_gravityEnabled && Time.time >= _gravityStartTime)
         {
             _gravityEnabled = true;
-        
-            // Show "GO!" message
+            
             if (UIManager.Instance != null)
             {
-                UIManager.Instance.ShowGoMessage();
+                UIManager.Instance.HideCountdownAndShowHUD();
             }
         
             if (_showCountdown)

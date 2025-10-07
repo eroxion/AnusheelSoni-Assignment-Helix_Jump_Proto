@@ -32,6 +32,7 @@ public class ScoreManager : MonoBehaviour
     private int _platformsPassed = 0;
     private int _currentCombo = 0;
     private HashSet<int> _passedPlatformIndices = new HashSet<int>();
+    private float _platformSpacing = 4f;
     
     // Time tracking
     private float _sessionStartTime = 0f;
@@ -64,6 +65,18 @@ public class ScoreManager : MonoBehaviour
     
     private void Start()
     {
+        // Get platform spacing from PlatformGenerator
+        PlatformGenerator generator = FindAnyObjectByType<PlatformGenerator>();
+        if (generator != null)
+        {
+            _platformSpacing = generator.PlatformSpacing;
+            Debug.Log($"ScoreManager: Using platform spacing {_platformSpacing} from PlatformGenerator");
+        }
+        else
+        {
+            Debug.LogWarning("ScoreManager: PlatformGenerator not found, using default spacing 4.0");
+        }
+        
         string highScoreDisplay = _highScore > 0 
             ? $"High Score: {_highScore} (Time: {FormatTime(_highScoreTime)})" 
             : "High Score: 0";
@@ -101,52 +114,38 @@ public class ScoreManager : MonoBehaviour
     
     /// <summary>
     /// Tracks ball position and awards score when passing platforms.
-    /// Now includes Platform_0 sound trigger.
     /// </summary>
     internal void CheckPlatformPassed(float ballY, out int currentPlatformIndex)
     {
-        currentPlatformIndex = Mathf.FloorToInt(-ballY / 4f);
-        
-        // Check all platforms from 0 to current (including Platform_0)
+        // Use a half-spacing safety offset to avoid off-by-one near boundaries
+        float offsetY = -ballY - (_platformSpacing * 0.5f);
+        currentPlatformIndex = Mathf.FloorToInt(offsetY / _platformSpacing);
+
         for (int i = 0; i <= currentPlatformIndex; i++)
         {
-            if (!_passedPlatformIndices.Contains(i))
+            if (_passedPlatformIndices.Add(i))
             {
-                _passedPlatformIndices.Add(i);
                 _platformsPassed++;
-        
-                // For Platform_0: Play sound but don't award points (starting platform)
-                if (i == 0)
+
+                // Award points for ALL platforms including 0
+                int pointsToAdd = _pointsPerPlatform;
+
+                if (_useComboSystem)
                 {
-                    // Play platform clear sound for passing through starting platform
-                    if (AudioManager.Instance != null)
-                    {
-                        AudioManager.Instance.PlayPlatformClear();
-                    }
-                
-                    Debug.Log("Passed through Platform_0 (starting platform)");
+                    _currentCombo = Mathf.Min(_currentCombo + 1, _maxCombo);
+                    int comboBonus = _currentCombo > 1
+                        ? Mathf.RoundToInt(pointsToAdd * (_comboMultiplier - 1f) * (_currentCombo - 1))
+                        : 0;
+                    pointsToAdd += comboBonus;
+                    OnComboChanged?.Invoke(_currentCombo);
                 }
-                else
+
+                _currentScore += pointsToAdd;
+                OnScoreChanged?.Invoke(_currentScore);
+
+                if (AudioManager.Instance != null)
                 {
-                    // For all other platforms: Award points AND play sound
-                    int pointsToAdd = _pointsPerPlatform;
-            
-                    if (_useComboSystem)
-                    {
-                        _currentCombo = Mathf.Min(_currentCombo + 1, _maxCombo);
-                        int comboBonus = _currentCombo > 1 ? Mathf.RoundToInt(pointsToAdd * (_comboMultiplier - 1f) * (_currentCombo - 1)) : 0;
-                        pointsToAdd += comboBonus;
-                        OnComboChanged?.Invoke(_currentCombo);
-                    }
-            
-                    _currentScore += pointsToAdd;
-                    OnScoreChanged?.Invoke(_currentScore);
-            
-                    // Play platform clear sound
-                    if (AudioManager.Instance != null)
-                    {
-                        AudioManager.Instance.PlayPlatformClear();
-                    }
+                    AudioManager.Instance.PlayPlatformClear();
                 }
             }
         }
@@ -362,7 +361,7 @@ public class ScoreManager : MonoBehaviour
     // Internal getters
     internal int CurrentScore => _currentScore;
     internal int HighScore => _highScore;
-    internal float HighScoreTime => _highScoreTime; // NEW: Exposes high score time
+    internal float HighScoreTime => _highScoreTime;
     internal int PlatformsPassed => _platformsPassed;
     internal int CurrentCombo => _currentCombo;
     internal bool UseComboSystem => _useComboSystem;

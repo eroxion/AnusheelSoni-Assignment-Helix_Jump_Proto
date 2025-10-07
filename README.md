@@ -2,15 +2,16 @@
 
 A polished 3D endless arcade game built with Unity featuring true object pooling, procedural platform generation, multiple difficulty modes, and optimized performance for WebGL deployment.
 
-[![Play on GitHub Pages](https://img.shields.io/badge/▶️_Play_Now-Live_Demo-brightgreen?style=for-the-badge&logo=github)](https://eroxion.github.io/AnusheelSoni-Assignment-Helix_Jump_Proto/)
-[![View Repository](https://img.shields.io/badge/View-Repository-blue?style=for-the-badge&logo=github)](https://github.com/eroxion/AnusheelSoni-Assignment-Helix_Jump_Proto)
+[![Play on GitHub Pages](https://img.shields.io/badge/▶️_Play_Now-Live_Demo-brightgreen?https://eroxion.github.io/AnusheelSoni.io/badge/View-Repository-blue?style=for-the-badge
 
-![Unity](https://img.shields.io/badge/Unity-6000.0.26f2-black?logo=unity)
-![C#](https://img.shields.io/badge/C%23-11.0-239120?logo=c-sharp)
-![Platform](https://img.shields.io/badge/Platform-WebGL-blue)
-![Status](https://img.shields.io/badge/Status-Complete-success)
+![Unity](https://img.shields.io/badge/Unity-6000.0.26f2-black.shields.io/badge/C%23-11Platform-WebGL-
 
----
+
+
+
+
+
+***
 
 ## 📋 Table of Contents
 
@@ -28,7 +29,7 @@ A polished 3D endless arcade game built with Unity featuring true object pooling
 - [License](#license)
 - [Contact](#contact)
 
----
+***
 
 ## 🎯 Overview
 
@@ -39,7 +40,7 @@ Helix Jump is a skill-based endless arcade game where players navigate a bouncin
 **Target Platform:** WebGL (browser-playable)  
 **Performance:** 60 FPS constant with zero GC allocations during gameplay
 
----
+***
 
 ## 🎮 Play Online
 
@@ -66,16 +67,18 @@ Helix Jump is a skill-based endless arcade game where players navigate a bouncin
 - **True Object Pooling**: 20 platforms cycle infinitely with zero runtime instantiation
 - **Procedural Generation**: Random gaps (1-3 segments) and deadly segments (0-4 based on difficulty)
 - **Physics-Based Ball**: Custom bounce system with independent height and frequency control
-- **Smooth Controls**: Lerp-based rotation with configurable sensitivity (keyboard, mouse, touch)
+- **Smooth Controls**: Lerp-based rotation with configurable sensitivity and global multiplier
 - **Endless Gameplay**: Infinite platform cycling with consistent 60 FPS performance
-- **Visual Continuity**: Separate cylinder management for seamless center pole throughout gameplay
-- **Countdown System**: 3-second countdown with device-specific control hints
+- **Visual Continuity**: Separate cylinder management (23 cylinders) for seamless center pole
+- **Instant Start**: 3-second countdown transitions directly to gameplay (no flash messages)
+- **Fixed Platform Recycling**: Stable recycling logic preventing gaps beyond 100+ platforms
 
 ### 🏆 **Progression System**
 - **4 Difficulty Modes**: Easy, Medium, Hard, Expert with distinct challenge levels
 - **Per-Difficulty Tracking**: Separate high scores and best times for each difficulty
 - **Persistent Storage**: PlayerPrefs-based score and settings persistence across sessions
 - **High Score Logic**: Higher score wins; equal scores compare by time (lower time wins)
+- **Complete Scoring**: All platforms count including Platform_0 (starting platform)
 - **New High Score Celebration**: Visual and audio feedback on record breaks
 
 ### 🎨 **Polish & UI**
@@ -83,8 +86,8 @@ Helix Jump is a skill-based endless arcade game where players navigate a bouncin
 - **Real-Time HUD**: Score and timer displayed during gameplay
 - **Game Over Screen**: Final score, time, high score, and best time statistics
 - **Pause System**: ESC key pauses with resume, settings, and exit options
-- **Settings Panel**: Volume controls, sensitivity adjustments, invert options, reset defaults
-- **Control Hints**: Device-specific hints during countdown (keyboard/mouse/touch)
+- **Settings Panel**: Volume controls, sensitivity adjustments, global multiplier, invert options
+- **Smart Control Hints**: Device-specific hints with enhanced WebGL detection for accurate mobile/desktop browser recognition
 - **Smooth Camera**: Lerp-based follow for polished visual experience
 
 ### 🔊 **Audio System**
@@ -95,21 +98,24 @@ Helix Jump is a skill-based endless arcade game where players navigate a bouncin
   - Death sound on deadly platform collision
   - Level completion celebration
   - New high score achievement
-  - Platform clear on gap passage (including Platform_0)
+  - Platform clear on gap passage (all platforms including Platform_0)
 - **Optimized Playback**: 5-source round-robin pool for instant, zero-delay SFX
-- **Volume Controls**: Independent BGM and SFX sliders with squared curve for better control
+- **Volume Controls**: Independent BGM and SFX sliders with squared curve for natural feel
 - **WebGL Compatibility**: Vorbis compression for all audio, browser autoplay handling
 
 ### ⚙️ **Settings & Customization**
 - **Audio Settings**:
   - Separate BGM and SFX volume sliders (0-100%)
   - Squared volume curve for improved slider feel
+- **Global Rotation Multiplier** *(New!)*:
+  - Master speed control (0.1x - 5.0x) affecting all input types
+  - Formula: InputSpeed × GlobalMultiplier × BaseMultiplier = degrees/second
+  - Real-time adjustment with instant feedback
 - **Control Settings**:
-  - Keyboard sensitivity (0.5x - 3x)
-  - Mouse sensitivity (0.5x - 3x)
-  - Touch sensitivity (0.5x - 3x)
+  - Keyboard sensitivity (0.1x - 3.0x)
+  - Mouse sensitivity (0.1x - 100x)
+  - Touch sensitivity (0.1x - 100x)
   - Independent invert toggles per input type
-- **Smoothing Control**: Rotation smoothing factor (0-0.5, default 0.15)
 - **Reset to Defaults**: One-click restoration of default settings
 - **Persistent Settings**: All settings saved via PlayerPrefs
 
@@ -122,7 +128,7 @@ Helix Jump is a skill-based endless arcade game where players navigate a bouncin
 | **Hard** | 3.25x | 2-4 per platform | Fast bouncing, more dangers, high skill required |
 | **Expert** | 4.0x | 3-4 per platform | Extreme speed and hazards, master level |
 
----
+***
 
 ## 🎮 How to Play
 
@@ -134,7 +140,7 @@ Navigate the bouncing ball through the rotating helix tower by controlling the r
 2. **Safe Platforms** (Blue/Green): Pass through safely, +1 point per platform
 3. **Deadly Platforms** (Red): Instant game over on contact
 4. **Gaps**: Navigate through gaps to descend and score points
-5. **Scoring**: +1 point per platform passed (starting from Platform_1)
+5. **Scoring**: +1 point per platform passed (including Platform_0)
 6. **Timer**: Time tracked for leaderboard and high score tiebreaker
 7. **Endless**: No finish line—survive and score as long as possible
 
@@ -143,9 +149,10 @@ Navigate the bouncing ball through the rotating helix tower by controlling the r
 - **Prediction**: Look ahead to predict upcoming platform patterns
 - **Quick Adjustments**: Use rapid directional changes when needed
 - **Momentum**: Maintain smooth rotation through safe zones
+- **Speed Control**: Adjust global multiplier in settings to find your comfort zone
 - **Progressive Challenge**: Start on Easy, work your way up to Expert
 
----
+***
 
 ## 🕹️ Controls
 
@@ -160,18 +167,17 @@ Navigate the bouncing ball through the rotating helix tower by controlling the r
 - **Tap Pause Button**: Open pause menu
 
 ### **Settings Customization**
-- Adjust sensitivity for each input type independently (0.5x - 3x)
+- Global rotation multiplier (0.1x - 5.0x) affects all input types equally
+- Adjust sensitivity for each input type independently
 - Invert controls per input device (keyboard, mouse, touch)
-- Modify smoothing factor for rotation feel (0-0.5)
 
 ### **Control Hints**
-Device-specific control hints displayed during countdown:
-- **Desktop (with mouse)**: "Use A/D or Arrow keys\nor drag with mouse to rotate"
-- **Desktop (keyboard only)**: "Use A/D or Arrow keys to rotate"
-- **Mobile**: "Swipe left or right to rotate"
-- **Tablet**: "Drag left or right to rotate"
+Smart device-specific control hints displayed during countdown with enhanced WebGL browser detection:
+- **Desktop Browser**: "Use A/D or Arrow keys\nor drag with mouse to rotate"
+- **Mobile Browser**: "Swipe left or right to rotate"
+- **Tablet Browser**: "Drag left or right to rotate"
 
----
+***
 
 ## 🏗️ Technical Highlights
 
@@ -179,13 +185,57 @@ Device-specific control hints displayed during countdown:
 - **Singleton Managers**: DontDestroyOnLoad pattern for cross-scene persistence
 - **Event-Driven UI**: C# events for decoupled, responsive UI updates
 - **Modular Design**: Clear separation of concerns (audio, input, difficulty, score, UI)
-- **Object Pooling**: Pure pooling with fixed 20-platform cycle
+- **True Object Pooling**: Fixed 20-platform cycle with zero runtime instantiation
 - **Optimized Performance**: Constant 60 FPS on WebGL with zero GC spikes during gameplay
+- **Comprehensive Documentation**: XML documentation on all classes and methods
+
+### **Recent Improvements**
+
+#### **Platform Recycling Fix** *(Critical)*
+```csharp
+// Fixed boundary calculation with half-spacing safety offset
+float offsetY = -ballY - (_platformSpacing * 0.5f);
+int passedIndex = Mathf.FloorToInt(offsetY / _platformSpacing);
+
+// Unified spacing across ScoreManager and PlatformGenerator
+// Platform spacing read directly from PlatformGenerator
+_platformSpacing = generator.PlatformSpacing;
+
+// Result: No doubled gaps, no mid-air disappearance, stable 100+ platforms
+```
+
+#### **Global Rotation Multiplier** *(New Feature)*
+```csharp
+// Master speed control affecting all input types
+float degreesPerSecond = inputSpeed × globalMultiplier × baseMultiplier;
+
+// Example calculations:
+// Keyboard 1.1 × Global 1.0 × Base 200 = 220°/s (default)
+// Keyboard 1.1 × Global 2.0 × Base 200 = 440°/s (2x faster)
+// Mouse 50 × Global 0.5 × Base 200 = 5000°/s (half speed)
+
+// Benefits:
+// - Unified speed control across keyboard/mouse/touch
+// - Fine-tune rotation speed to personal preference
+// - Range: 0.1x (very slow) to 5.0x (very fast)
+```
+
+#### **Enhanced WebGL Device Detection** *(Improved)*
+```csharp
+// Browser user agent parsing for accurate device detection
+string userAgent = GetBrowserUserAgent();
+bool isMobile = userAgent.Contains("mobile") || 
+                userAgent.Contains("android") || 
+                userAgent.Contains("iphone");
+
+// Result: Correct control hints on desktop vs mobile browsers
+// Handles: Chrome, Firefox, Safari, Edge on desktop and mobile
+```
 
 ### **Key Systems**
 
 #### **True Object Pooling**
-```
+```csharp
 // Fixed pool of 20 platform GameObjects, recycled infinitely
 private List<GameObject> _platformPool = new List<GameObject>();
 
@@ -207,7 +257,7 @@ platform.transform.localRotation = randomRotation;
 - **WebGL optimized**: Smooth browser performance
 
 #### **Procedural Platform Generation**
-```
+```csharp
 // Each platform procedurally generated at start with:
 - Random Y rotation (0-360°) for visual variety
 - Random gap size (1-3 segments) and position
@@ -219,7 +269,7 @@ platform.transform.localRotation = randomRotation;
 ```
 
 #### **Custom Ball Physics**
-```
+```csharp
 // Independent bounce height and frequency control
 _calculatedGravity = 2f * _targetBounceHeight * (_bounceFrequency²);
 _calculatedBounceVelocity = √(2 × gravity × height);
@@ -235,20 +285,21 @@ _calculatedBounceVelocity = √(2 × gravity × height);
 - Gravity and initial velocity calculated to achieve both parameters simultaneously
 
 #### **Smooth Rotation System**
-```
+```csharp
 // Lerp-based smoothing for polished feel
 _currentVelocity = Mathf.Lerp(_currentVelocity, _targetSpeed, 
                                1f - _smoothingFactor);
 
-// Default: 0.15 smoothing factor
-// Range: 0 (instant/no smoothing) to 0.5 (very smooth)
+// Default: 0.65 smoothing factor
+// Range: 0.1 (very responsive) to 1.0 (very smooth)
 // Provides natural acceleration/deceleration feel
+// Global multiplier applies before smoothing
 ```
 
 #### **Audio Optimization**
-```
+```csharp
 // 5-source round-robin pool for instant playback
-private AudioSource[] _sfxSources = new AudioSource;
+private AudioSource[] _sfxSources = new AudioSource[5];
 private int _nextSfxIndex = 0;
 
 // Zero-overhead playback (no availability checking)
@@ -263,7 +314,7 @@ _nextSfxIndex = (_nextSfxIndex + 1) % 5;
 ```
 
 #### **Cylinder Management**
-```
+```csharp
 // 23 cylinders generated independently from platforms:
 // - 20 cylinders for platform positions (Y=0 to Y=-76)
 // - 3 cylinders above start (Y=+4, +8, +12)
@@ -275,7 +326,7 @@ _nextSfxIndex = (_nextSfxIndex + 1) % 5;
 ```
 
 #### **Per-Difficulty Persistence**
-```
+```csharp
 // Separate tracking for each difficulty level
 PlayerPrefs Keys:
 - "HighScore_Easy" / "HighScoreTime_Easy"
@@ -290,13 +341,14 @@ return false;
 ```
 
 #### **Performance Optimizations**
-- Platform recycling checked every 3 frames instead of every frame
+- Platform recycling checked every 3 frames instead of every frame (66% CPU reduction)
 - Direct List access with modulo wrapping for efficient lookups
 - Cached collections to avoid allocations during gameplay
-- Squared volume curve for better slider control
+- Squared volume curve for better slider control feel
 - No build compression for faster initial load times
+- Unified spacing calculation prevents drift and recycling bugs
 
----
+***
 
 ## 📁 Project Structure
 
@@ -314,24 +366,44 @@ AnusheelSoni-Assignment-Helix_Jump_Proto/
 │   │
 │   ├── Scripts/
 │   │   ├── Managers/              # Singleton managers
+│   │   │   ├── AudioManager.cs
+│   │   │   ├── DifficultyManager.cs
+│   │   │   ├── ScoreManager.cs
+│   │   │   ├── SettingsManager.cs
+│   │   │   ├── UIManager.cs
+│   │   │   ├── MainMenuManager.cs
+│   │   │   └── PauseManager.cs
 │   │   ├── Gameplay/              # Game logic
+│   │   │   ├── BallController.cs
+│   │   │   ├── PlatformGenerator.cs
+│   │   │   ├── HelixRotator.cs
+│   │   │   └── CameraController.cs
 │   │   ├── Input/                 # Input handling
+│   │   │   └── InputHandler.cs
 │   │   └── UI/                    # UI controllers
+│   │       ├── SettingsUI.cs
+│   │       └── DifficultyUI.cs
 │   │
 │   ├── Prefabs/
 │   │   ├── Ball.prefab
 │   │   └── PlatformSegment.prefab
 │   │
 │   ├── Materials/
-│   │   ├── SafePlatform.mat
-│   │   ├── DeadlyPlatform.mat
-│   │   ├── CentralPole.mat
-│   │   ├── Ball.mat
-│   │   └── BallTrail.mat
+│   │   ├── Ball_Mat.mat
+│   │   ├── BallTrail_Mat.mat
+│   │   ├── Platform_Safe_Mat.mat
+│   │   ├── Platform_Deadly_Mat.mat
+│   │   └── CentralPole_Mat.mat
 │   │
 │   ├── Audio/
-│   │   ├── Music/                 # BGM tracks (Vorbis)
-│   │   └── SFX/                   # Sound effects (Vorbis)
+│   │   ├── MainMenu_BGM.ogg
+│   │   ├── MainGame_BGM.ogg
+│   │   ├── Ball_Bounce_SFX.ogg
+│   │   ├── Button_Click_SFX.ogg
+│   │   ├── Death_SFX.ogg
+│   │   ├── Level_Win_SFX.ogg
+│   │   ├── New_HighScore_SFX.ogg
+│   │   └── Platform_Clear_SFX.ogg
 │   │
 │   ├── Models/
 │   │   └── PlatformSegment.fbx    # Custom platform mesh
@@ -342,13 +414,15 @@ AnusheelSoni-Assignment-Helix_Jump_Proto/
 │   └── Settings/
 │       └── (URP pipeline assets)
 │
+├── README.md                      # This file
+├── README_FolderStructure.md      # Detailed folder structure
+├── README_NamingConventions.md    # Coding standards
 └── ProjectSettings/               # Unity configuration
-
 ```
 
-**Note:** For complete detailed folder structure, see `FOLDER_STRUCTURE.md` in the repository root.
+**Note:** For complete detailed folder structure, see `README_FolderStructure.md` in the repository root.
 
----
+***
 
 ## 🚀 Installation
 
@@ -361,7 +435,7 @@ AnusheelSoni-Assignment-Helix_Jump_Proto/
 - Click anywhere to unlock audio
 
 **Option 2: Clone and Open in Unity**
-```
+```bash
 # Clone the repository
 git clone https://github.com/eroxion/AnusheelSoni-Assignment-Helix_Jump_Proto.git
 
@@ -387,7 +461,7 @@ cd AnusheelSoni-Assignment-Helix_Jump_Proto
 4. Wait for initial import and compilation
 5. Open MainMenu scene to start
 
----
+***
 
 ## 🔨 Building
 
@@ -452,17 +526,19 @@ This project demonstrates proficiency in:
 - ✅ **UI/UX Design**: Responsive menus, HUD, settings, pause system
 - ✅ **State Management**: Singleton pattern, DontDestroyOnLoad
 - ✅ **Performance Optimization**: Zero GC allocations, constant 60 FPS
-- ✅ **Cross-Platform Input**: Keyboard, mouse, touch support with device detection
+- ✅ **Cross-Platform Input**: Keyboard, mouse, touch with WebGL browser detection
 - ✅ **Data Persistence**: PlayerPrefs for scores and settings
 - ✅ **WebGL Deployment**: Browser compatibility, GitHub Pages hosting
 - ✅ **Version Control**: Git workflow with detailed, descriptive commits
+- ✅ **Code Documentation**: Comprehensive XML documentation across all scripts
+- ✅ **Debugging**: Critical platform recycling bug fixes, scoring corrections
 
----
+***
 
 ## 📝 Credits
 
 **Developer:** Anusheel Soni  
-**Email:** anusheelsoni4@gmail.com  
+**Email:** [anusheelsoni4@gmail.com](mailto:anusheelsoni4@gmail.com)  
 **GitHub:** [@eroxion](https://github.com/eroxion)  
 **Date:** October 2025  
 **Development Time:** 3 days
@@ -471,7 +547,7 @@ This project demonstrates proficiency in:
 - Unity 6000.0.26f2
 - C# Programming Language
 - JetBrains Rider 2025.2.2.1
-- Blender (3D modeling for platform segments)
+- Blender 4.0 (3D modeling for platform segments)
 - Git & GitHub
 - GitHub Pages (web hosting)
 
@@ -480,7 +556,7 @@ This project demonstrates proficiency in:
 - Audio: Royalty-free sound effects and music
 - 3D Models: Custom-created in Blender
 
----
+***
 
 ## 📄 License
 
@@ -491,32 +567,36 @@ This project was created as part of a game development assignment for **Eternopl
 ## 📧 Contact
 
 **Developer:** Anusheel Soni  
-**Email:** anusheelsoni4@gmail.com  
+**Email:** [anusheelsoni4@gmail.com](mailto:anusheelsoni4@gmail.com)  
 **GitHub:** [github.com/eroxion](https://github.com/eroxion)
 
 **For Inquiries:**
 - Technical questions: Create an issue on GitHub
-- General feedback: Email anusheelsoni4@gmail.com
+- General feedback: Email [anusheelsoni4@gmail.com](mailto:anusheelsoni4@gmail.com)
 - Bug reports: Use GitHub Issues with detailed description
 
----
+***
 
 ## 🔗 Quick Links
 
 - **🎮 Play Game:** [https://eroxion.github.io/AnusheelSoni-Assignment-Helix_Jump_Proto/](https://eroxion.github.io/AnusheelSoni-Assignment-Helix_Jump_Proto/)
 - **📦 Repository:** [https://github.com/eroxion/AnusheelSoni-Assignment-Helix_Jump_Proto](https://github.com/eroxion/AnusheelSoni-Assignment-Helix_Jump_Proto)
 - **📝 Commits:** [View Development History](https://github.com/eroxion/AnusheelSoni-Assignment-Helix_Jump_Proto/commits)
+- **📂 Folder Structure:** [README_FolderStructure.md](README_FolderStructure.md)
+- **📖 Naming Conventions:** [README_NamingConventions.md](README_NamingConventions.md)
 
----
+***
 
 ## 🙏 Acknowledgments
 
 Special thanks to **Eternoplay** for providing this opportunity to showcase game development skills through this challenging and rewarding assignment.
 
----
+***
 
 **⭐ If you enjoyed this project, consider giving it a star on GitHub!**
 
----
+***
 
-*Last Updated: October 6, 2025*
+*Last Updated: October 7, 2025*
+
+***

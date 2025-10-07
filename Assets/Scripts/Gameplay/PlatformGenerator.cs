@@ -32,9 +32,9 @@ public class PlatformGenerator : MonoBehaviour
     [Header("Central Cylinder")]
     [SerializeField] private Material _centralCylinderMaterial;
     [SerializeField] private float _cylinderRadius = 0.3f;
-    [SerializeField] private float _cylinderHeightPerSegment = 4.0f;
-    [SerializeField] private int _cylindersAboveStart = 3;
-    [SerializeField] private int _platformsBeforeCylinderTransfer = 4;
+    [SerializeField] private float _cylinderHeightPerSegment;
+    [SerializeField] private int _cylindersAboveStart = 2;
+    [SerializeField] private int _platformsBeforeCylinderTransfer = 1;
     
     [Header("Organization")]
     [SerializeField] private Transform _helixContainer;
@@ -53,9 +53,12 @@ public class PlatformGenerator : MonoBehaviour
     private float _degreesPerSegment;
     private int _recycleCheckFrequency = 0;
     
+    internal float PlatformSpacing => _platformSpacing;
+    
     private void Awake()
     {
         _degreesPerSegment = 360f / _segmentsPerPlatform;
+        _cylinderHeightPerSegment = _platformSpacing;
     }
     
     private void Start()
@@ -245,29 +248,32 @@ public class PlatformGenerator : MonoBehaviour
     private void CheckPlatformsToRecycle()
     {
         if (_ball == null) return;
-        
+
         float ballY = _ball.position.y;
-        int currentPlatformIndex = Mathf.FloorToInt(-ballY / _platformSpacing);
-        
-        // Process each platform passed since last check
-        for (int i = _highestPassedIndex + 1; i <= currentPlatformIndex; i++)
+
+        // Use the SAME boundary logic as ScoreManager to avoid any drift
+        float offsetY = -ballY - (_platformSpacing * 0.5f);
+        int passedIndex = Mathf.FloorToInt(offsetY / _platformSpacing);
+
+        // Recycle only what’s newly passed since last check
+        for (int i = _highestPassedIndex + 1; i <= passedIndex; i++)
         {
-            // Get platform from pool by wrapping index
             int poolIndex = i % _platformPool.Count;
+            if (poolIndex < 0) poolIndex += _platformPool.Count; // safety
+
             GameObject platformToRecycle = _platformPool[poolIndex];
-            
-            // Reposition platform
+
             RepositionPlatform(platformToRecycle);
-            
-            // Transfer cylinder for every platform after 4th
+
             if (i >= _platformsBeforeCylinderTransfer)
             {
                 TransferTopCylinderToBottom();
             }
         }
-        
-        _highestPassedIndex = currentPlatformIndex;
+
+        _highestPassedIndex = Mathf.Max(_highestPassedIndex, passedIndex);
     }
+
     
     /// <summary>
     /// Repositions platform to bottom with new random Y rotation.

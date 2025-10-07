@@ -25,7 +25,7 @@ This document defines the organizational structure for all project assets in the
 - `AudioManager.cs` - 5-source audio pool for BGM and SFX
 - `DifficultyManager.cs` - 4 difficulty modes with per-difficulty persistence
 - `ScoreManager.cs` - Score tracking, timer, and high score with time tiebreaker
-- `SettingsManager.cs` - PlayerPrefs-based settings persistence
+- `SettingsManager.cs` - PlayerPrefs-based settings persistence with global rotation multiplier
 - `UIManager.cs` - HUD, screens, and UI state management
 - `PauseManager.cs` - Pause functionality and menu
 - `MainMenuManager.cs` - Main menu navigation and difficulty selection
@@ -34,17 +34,17 @@ This document defines the organizational structure for all project assets in the
 **Purpose**: Core gameplay mechanics and physics
 - `PlatformGenerator.cs` - True object pooling with 20-platform cycle and procedural generation
 - `BallController.cs` - Custom bounce physics with independent height/frequency control
-- `HelixRotator.cs` - Rotation input handling with lerp-based smoothing
+- `HelixRotator.cs` - Rotation input handling with lerp-based smoothing and global multiplier support
 - `CameraController.cs` - Smooth camera follow using lerp
 
 #### `Scripts/Input/`
 **Purpose**: Cross-platform input handling
-- `InputHandler.cs` - Unified input system for keyboard, mouse, and touch with device detection
+- `InputHandler.cs` - Unified input system for keyboard, mouse, and touch with enhanced WebGL browser detection
 
 #### `Scripts/UI/`
 **Purpose**: UI controllers and panel management
 - `DifficultyUI.cs` - Difficulty selection panel controller
-- `SettingsUI.cs` - Settings panel with volume controls and sensitivity sliders
+- `SettingsUI.cs` - Settings panel with volume controls, global multiplier, and sensitivity sliders
 
 ---
 
@@ -93,7 +93,7 @@ This document defines the organizational structure for all project assets in the
 - `Death_SFX.ogg` - Deadly platform collision
 - `Level_Win_SFX.ogg` - Level completion/victory
 - `New_HighScore_SFX.ogg` - New high score achievement
-- `Platform_Clear_SFX.ogg` - Gap passage sound (including Platform_0)
+- `Platform_Clear_SFX.ogg` - Gap passage sound (all platforms including Platform_0)
 
 **Convention**: Audio files use descriptive names with `_BGM` or `_SFX` suffix, `.ogg` format
 
@@ -179,6 +179,7 @@ Assets/
 - `PlatformGenerator.cs` manages a fixed pool of 20 platform GameObjects
 - Platforms reuse segments, only position and rotation change during recycling
 - Separate cylinder management (23 cylinders) independent of platform pool
+- Fixed platform recycling bugs with half-spacing boundary offset for stable 100+ platform gameplay
 
 ### Audio System Design
 - 5-source round-robin pool for instant SFX playback with zero overhead
@@ -189,11 +190,21 @@ Assets/
 - No finish platform concept in final version
 - `Platform_Finish_Mat.mat` exists but is unused (legacy from earlier design)
 - Infinite platform cycling with consistent 60 FPS performance
+- Scoring includes Platform_0 (starting platform counts as first point)
 
 ### Cross-Platform Support
 - `InputHandler.cs` detects device type and adapts controls
+- Enhanced WebGL detection using browser user agent parsing for accurate mobile vs desktop recognition
 - Settings panel includes separate sensitivity sliders per input type
-- Device-specific control hints shown during countdown
+- Global rotation multiplier (0.1x-5.0x) affects all input types equally
+- Device-specific control hints shown during 3-second countdown with instant gameplay start
+
+### Recent Bug Fixes & Improvements
+- **Platform Recycling**: Fixed doubled gaps and mid-air disappearance after 38+ platforms
+- **Scoring System**: Platform_0 now correctly awards points (5 platforms = 5 points)
+- **Unified Spacing**: ScoreManager reads platform spacing directly from PlatformGenerator
+- **Instant Start**: Removed "GO!" flash, countdown transitions directly to HUD and gameplay
+- **WebGL Detection**: Browser-specific device detection for accurate control hints
 
 ---
 
@@ -202,7 +213,8 @@ Assets/
 - **Consistency**: All folder and file names follow established conventions
 - **No empty folders**: Only folders with content are committed
 - **Legacy assets**: `Platform_Finish_Mat.mat` retained for reference but unused
-- **Documentation**: All major scripts include XML documentation comments
+- **Documentation**: All major scripts include comprehensive XML documentation comments
+- **Performance**: Zero GC allocations during gameplay, constant 60 FPS
 
 ---
 

@@ -4,7 +4,7 @@ using TMPro;
 
 /// <summary>
 /// Handles settings UI interactions and updates.
-/// Syncs UI elements with SettingsManager values.
+/// Syncs UI elements (sliders, toggles, text) with SettingsManager values.
 /// Initializes on Start to show default values immediately.
 /// </summary>
 public class SettingsUI : MonoBehaviour
@@ -14,6 +14,10 @@ public class SettingsUI : MonoBehaviour
     [SerializeField] private Slider _sfxVolumeSlider;
     [SerializeField] private TextMeshProUGUI _bgmValueText;
     [SerializeField] private TextMeshProUGUI _sfxValueText;
+    
+    [Header("Global Rotation Multiplier UI")]
+    [SerializeField] private Slider _globalRotationMultiplierSlider;
+    [SerializeField] private TextMeshProUGUI _globalRotationMultiplierValueText;
     
     [Header("Control UI")]
     [SerializeField] private Slider _keyboardSpeedSlider;
@@ -47,7 +51,7 @@ public class SettingsUI : MonoBehaviour
             LoadSettingsToUI();
         }
         
-        // Subscribe to events
+        // Subscribe to UI events
         SubscribeToEvents();
     }
     
@@ -58,48 +62,60 @@ public class SettingsUI : MonoBehaviour
     }
     
     /// <summary>
-    /// Initializes UI with current settings.
+    /// Initializes all UI elements with proper ranges and current values.
     /// Called once on Start.
     /// </summary>
     private void InitializeUI()
     {
-        // Set slider ranges
+        // Audio volume sliders (0-100%)
         _bgmVolumeSlider.minValue = 0f;
         _bgmVolumeSlider.maxValue = 1f;
         
         _sfxVolumeSlider.minValue = 0f;
         _sfxVolumeSlider.maxValue = 1f;
         
-        _keyboardSpeedSlider.minValue = 0.1f;
-        _keyboardSpeedSlider.maxValue = 3f;  // CHANGED: max 3
+        // Global rotation multiplier (0.1x - 5.0x)
+        _globalRotationMultiplierSlider.minValue = 0.1f;
+        _globalRotationMultiplierSlider.maxValue = 5f;
         
+        // Keyboard speed (0.1 - 3.0)
+        _keyboardSpeedSlider.minValue = 0.1f;
+        _keyboardSpeedSlider.maxValue = 3f;
+        
+        // Mouse speed (0.1 - 100)
         _mouseSpeedSlider.minValue = 0.1f;
         _mouseSpeedSlider.maxValue = 100f;
         
+        // Touch speed (0.1 - 100)
         _touchSpeedSlider.minValue = 0.1f;
         _touchSpeedSlider.maxValue = 100f;
         
-        // Load current settings to UI
+        // Load current settings into UI
         LoadSettingsToUI();
         
         _isInitialized = true;
-        Debug.Log("SettingsUI initialized with default values");
+        Debug.Log("SettingsUI initialized with current values");
     }
     
     /// <summary>
     /// Loads settings from SettingsManager to UI elements.
+    /// Uses SetValueWithoutNotify to avoid triggering change events.
     /// </summary>
     private void LoadSettingsToUI()
     {
         if (SettingsManager.Instance == null) return;
         
-        // Audio - without triggering events
+        // Audio settings
         _bgmVolumeSlider.SetValueWithoutNotify(SettingsManager.Instance.BGMVolume);
         _sfxVolumeSlider.SetValueWithoutNotify(SettingsManager.Instance.SFXVolume);
         UpdateBGMValueText(SettingsManager.Instance.BGMVolume);
         UpdateSFXValueText(SettingsManager.Instance.SFXVolume);
         
-        // Controls - without triggering events
+        // Global rotation multiplier
+        _globalRotationMultiplierSlider.SetValueWithoutNotify(SettingsManager.Instance.GlobalRotationMultiplier);
+        UpdateGlobalRotationMultiplierValueText(SettingsManager.Instance.GlobalRotationMultiplier);
+        
+        // Control sensitivity settings
         _keyboardSpeedSlider.SetValueWithoutNotify(SettingsManager.Instance.KeyboardSpeed);
         _mouseSpeedSlider.SetValueWithoutNotify(SettingsManager.Instance.MouseSpeed);
         _touchSpeedSlider.SetValueWithoutNotify(SettingsManager.Instance.TouchSpeed);
@@ -107,16 +123,21 @@ public class SettingsUI : MonoBehaviour
         UpdateMouseValueText(SettingsManager.Instance.MouseSpeed);
         UpdateTouchValueText(SettingsManager.Instance.TouchSpeed);
         
-        // Invert - without triggering events
+        // Invert control settings
         _invertKeyboardToggle.SetIsOnWithoutNotify(SettingsManager.Instance.InvertKeyboard);
         _invertMouseToggle.SetIsOnWithoutNotify(SettingsManager.Instance.InvertMouse);
         _invertTouchToggle.SetIsOnWithoutNotify(SettingsManager.Instance.InvertTouch);
     }
     
+    /// <summary>
+    /// Subscribes to all UI element change events.
+    /// Called when panel is enabled.
+    /// </summary>
     private void SubscribeToEvents()
     {
         _bgmVolumeSlider.onValueChanged.AddListener(OnBGMVolumeChanged);
         _sfxVolumeSlider.onValueChanged.AddListener(OnSFXVolumeChanged);
+        _globalRotationMultiplierSlider.onValueChanged.AddListener(OnGlobalRotationMultiplierChanged);
         _keyboardSpeedSlider.onValueChanged.AddListener(OnKeyboardSpeedChanged);
         _mouseSpeedSlider.onValueChanged.AddListener(OnMouseSpeedChanged);
         _touchSpeedSlider.onValueChanged.AddListener(OnTouchSpeedChanged);
@@ -125,10 +146,15 @@ public class SettingsUI : MonoBehaviour
         _invertTouchToggle.onValueChanged.AddListener(OnInvertTouchChanged);
     }
     
+    /// <summary>
+    /// Unsubscribes from all UI element change events.
+    /// Called when panel is disabled to prevent memory leaks.
+    /// </summary>
     private void UnsubscribeFromEvents()
     {
         _bgmVolumeSlider.onValueChanged.RemoveListener(OnBGMVolumeChanged);
         _sfxVolumeSlider.onValueChanged.RemoveListener(OnSFXVolumeChanged);
+        _globalRotationMultiplierSlider.onValueChanged.RemoveListener(OnGlobalRotationMultiplierChanged);
         _keyboardSpeedSlider.onValueChanged.RemoveListener(OnKeyboardSpeedChanged);
         _mouseSpeedSlider.onValueChanged.RemoveListener(OnMouseSpeedChanged);
         _touchSpeedSlider.onValueChanged.RemoveListener(OnTouchSpeedChanged);
@@ -155,6 +181,17 @@ public class SettingsUI : MonoBehaviour
             SettingsManager.Instance.SetSFXVolume(value);
         }
         UpdateSFXValueText(value);
+    }
+    
+    // ===== GLOBAL MULTIPLIER CALLBACK =====
+    
+    private void OnGlobalRotationMultiplierChanged(float value)
+    {
+        if (SettingsManager.Instance != null)
+        {
+            SettingsManager.Instance.SetGlobalRotationMultiplier(value);
+        }
+        UpdateGlobalRotationMultiplierValueText(value);
     }
     
     // ===== CONTROL CALLBACKS =====
@@ -214,6 +251,9 @@ public class SettingsUI : MonoBehaviour
     
     // ===== VALUE TEXT UPDATES =====
     
+    /// <summary>
+    /// Updates BGM volume text display (0-100%).
+    /// </summary>
     private void UpdateBGMValueText(float value)
     {
         if (_bgmValueText != null)
@@ -222,6 +262,9 @@ public class SettingsUI : MonoBehaviour
         }
     }
     
+    /// <summary>
+    /// Updates SFX volume text display (0-100%).
+    /// </summary>
     private void UpdateSFXValueText(float value)
     {
         if (_sfxValueText != null)
@@ -230,6 +273,20 @@ public class SettingsUI : MonoBehaviour
         }
     }
     
+    /// <summary>
+    /// Updates global rotation multiplier text display (e.g., "2.5x").
+    /// </summary>
+    private void UpdateGlobalRotationMultiplierValueText(float value)
+    {
+        if (_globalRotationMultiplierValueText != null)
+        {
+            _globalRotationMultiplierValueText.text = value.ToString("F1") + "x";
+        }
+    }
+    
+    /// <summary>
+    /// Updates keyboard speed text display (one decimal place).
+    /// </summary>
     private void UpdateKeyboardValueText(float value)
     {
         if (_keyboardValueText != null)
@@ -238,6 +295,9 @@ public class SettingsUI : MonoBehaviour
         }
     }
     
+    /// <summary>
+    /// Updates mouse speed text display (whole number).
+    /// </summary>
     private void UpdateMouseValueText(float value)
     {
         if (_mouseValueText != null)
@@ -246,6 +306,9 @@ public class SettingsUI : MonoBehaviour
         }
     }
     
+    /// <summary>
+    /// Updates touch speed text display (whole number).
+    /// </summary>
     private void UpdateTouchValueText(float value)
     {
         if (_touchValueText != null)
@@ -255,8 +318,8 @@ public class SettingsUI : MonoBehaviour
     }
     
     /// <summary>
-    /// Called by Reset button.
-    /// PUBLIC for Unity UI onClick.
+    /// Called by Reset button in settings panel.
+    /// PUBLIC for Unity UI onClick event.
     /// </summary>
     public void OnResetButtonClicked()
     {
@@ -266,6 +329,7 @@ public class SettingsUI : MonoBehaviour
             AudioManager.Instance.PlayButtonClick();
         }
     
+        // Reset all settings to defaults
         if (SettingsManager.Instance != null)
         {
             SettingsManager.Instance.ResetToDefaults();
