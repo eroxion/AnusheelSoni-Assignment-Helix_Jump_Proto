@@ -2,9 +2,9 @@
 
 A polished 3D endless arcade game built with Unity featuring true object pooling, procedural platform generation, multiple difficulty modes, and optimized performance for WebGL deployment.
 
-[![Play on GitHub Pages](https://img.shields.io/badge/▶️_Play_Now-Live_Demo-brightgreen?https://eroxion.github.io/AnusheelSoni.io/badge/View-Repository-blue?style=for-the-badge
+[![Play on GitHub Pages](https://img.shields.io/badge/▶️_Play_Now-Live_Demo-brightgreen?https://eroxion.github.io/AnusheelSoni.io/badge/View-Repository-blue?style=for-the-badge)
 
-![Unity](https://img.shields.io/badge/Unity-6000.0.26f2-black.shields.io/badge/C%23-11Platform-WebGL-
+![Unity](https://img.shields.io/badge/Unity-6000.0.26f2-black.shields.io/badge/C%23-11Platform-WebGL-)
 
 
 
