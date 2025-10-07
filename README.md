@@ -2,14 +2,12 @@
 
 A polished 3D endless arcade game built with Unity featuring true object pooling, procedural platform generation, multiple difficulty modes, and optimized performance for WebGL deployment.
 
-[![Play on GitHub Pages](https://img.shields.io/badge/▶️_Play_Now-Live_Demo-brightgreen?https://eroxion.github.io/AnusheelSoni.io/badge/View-Repository-blue?style=for-the-badge)
-
-![Unity](https://img.shields.io/badge/Unity-6000.0.26f2-black.shields.io/badge/C%23-11Platform-WebGL-)
-
-
-
-
-
+[![Play on GitHub Pages](https://img.shields.io/badge/▶️_Play_Now-Live_Demo-brightgreen?style=for-the-badge&logo=github)](https://eroxion.github.io/AnusheelSoni-Assignment-Helix_Jump_Proto/)
+[![View Repository](https://img.shields.io/badge/View-Repository-blue?style=for-the-badge&logo=github)](https://github.com/eroxion/AnusheelSoni-Assignment-Helix_Jump_Proto)
+![Unity](https://img.shields.io/badge/Unity-6000.0.26f2-black?logo=unity)
+![C#](https://img.shields.io/badge/C%23-11.0-239120?logo=c-sharp)
+![Platform](https://img.shields.io/badge/Platform-WebGL-blue)
+![Status](https://img.shields.io/badge/Status-Complete-success)
 
 ***
 
