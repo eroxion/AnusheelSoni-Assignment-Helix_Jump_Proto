@@ -585,16 +585,10 @@ This project was created as part of a game development assignment for **Eternopl
 
 ***
 
-## 🙏 Acknowledgments
-
-Special thanks to **Eternoplay** for providing this opportunity to showcase game development skills through this challenging and rewarding assignment.
-
-***
-
 **⭐ If you enjoyed this project, consider giving it a star on GitHub!**
 
 ***
 
-*Last Updated: October 7, 2025*
+*Last Updated: October 12, 2025*
 
 ***
