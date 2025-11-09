@@ -2,8 +2,8 @@
 
 A polished 3D endless arcade game built with Unity featuring true object pooling, procedural platform generation, multiple difficulty modes, and optimized performance for WebGL deployment.
 
-[![Play on GitHub Pages](https://img.shields.io/badge/▶️_Play_Now-Live_Demo-brightgreen?style=for-the-badge&logo=github)](https://eroxion.github.io/AnusheelSoni-Assignment-Helix_Jump_Proto/)
-[![View Repository](https://img.shields.io/badge/View-Repository-blue?style=for-the-badge&logo=github)](https://github.com/eroxion/AnusheelSoni-Assignment-Helix_Jump_Proto)
+[![Play on GitHub Pages](https://img.shields.io/badge/▶️_Play_Now-Live_Demo-brightgreen?style=for-the-badge&logo=github)](https://eroxion.github.io/Helix_Jump_Proto/)
+[![View Repository](https://img.shields.io/badge/View-Repository-blue?style=for-the-badge&logo=github)](https://github.com/eroxion/Helix_Jump_Proto)
 ![Unity](https://img.shields.io/badge/Unity-6000.0.26f2-black?logo=unity)
 ![C#](https://img.shields.io/badge/C%23-11.0-239120?logo=c-sharp)
 ![Platform](https://img.shields.io/badge/Platform-WebGL-blue)
@@ -42,7 +42,7 @@ Helix Jump is a skill-based endless arcade game where players navigate a bouncin
 
 ## 🎮 Play Online
 
-### **[▶️ PLAY NOW - Live Demo](https://eroxion.github.io/AnusheelSoni-Assignment-Helix_Jump_Proto/)**
+### **[▶️ PLAY NOW - Live Demo](https://eroxion.github.io/Helix_Jump_Proto/)**
 
 **Requirements:**
 - Modern web browser (Chrome 90+, Firefox 88+, Edge 90+)
@@ -351,7 +351,7 @@ return false;
 ## 📁 Project Structure
 
 ```
-AnusheelSoni-Assignment-Helix_Jump_Proto/
+Helix_Jump_Proto/
 ├── docs/                          # GitHub Pages (WebGL Build)
 │   ├── Build/                     # Compressed game files
 │   ├── TemplateData/              # Unity web template
@@ -427,7 +427,7 @@ AnusheelSoni-Assignment-Helix_Jump_Proto/
 ### **Playing the Game**
 
 **Option 1: Play Online (Recommended)**
-- Visit: [https://eroxion.github.io/AnusheelSoni-Assignment-Helix_Jump_Proto/](https://eroxion.github.io/AnusheelSoni-Assignment-Helix_Jump_Proto/)
+- Visit: [https://eroxion.github.io/Helix_Jump_Proto/](https://eroxion.github.io/Helix_Jump_Proto/)
 - No download or installation required
 - Works on desktop and mobile browsers
 - Click anywhere to unlock audio
@@ -435,10 +435,10 @@ AnusheelSoni-Assignment-Helix_Jump_Proto/
 **Option 2: Clone and Open in Unity**
 ```bash
 # Clone the repository
-git clone https://github.com/eroxion/AnusheelSoni-Assignment-Helix_Jump_Proto.git
+git clone https://github.com/eroxion/Helix_Jump_Proto.git
 
 # Navigate to folder
-cd AnusheelSoni-Assignment-Helix_Jump_Proto
+cd Helix_Jump_Proto
 
 # Open in Unity Hub
 # Add → Select project folder → Open with Unity 6000.0.26f2
@@ -554,12 +554,6 @@ This project demonstrates proficiency in:
 - Audio: Royalty-free sound effects and music
 - 3D Models: Custom-created in Blender
 
-***
-
-## 📄 License
-
-This project was created as part of a game development assignment for **Eternoplay**. All rights reserved.
-
 ---
 
 ## 📧 Contact
@@ -577,9 +571,9 @@ This project was created as part of a game development assignment for **Eternopl
 
 ## 🔗 Quick Links
 
-- **🎮 Play Game:** [https://eroxion.github.io/AnusheelSoni-Assignment-Helix_Jump_Proto/](https://eroxion.github.io/AnusheelSoni-Assignment-Helix_Jump_Proto/)
-- **📦 Repository:** [https://github.com/eroxion/AnusheelSoni-Assignment-Helix_Jump_Proto](https://github.com/eroxion/AnusheelSoni-Assignment-Helix_Jump_Proto)
-- **📝 Commits:** [View Development History](https://github.com/eroxion/AnusheelSoni-Assignment-Helix_Jump_Proto/commits)
+- **🎮 Play Game:** [https://eroxion.github.io/Helix_Jump_Proto/](https://eroxion.github.io/Helix_Jump_Proto/)
+- **📦 Repository:** [https://github.com/eroxion/Helix_Jump_Proto](https://github.com/eroxion/Helix_Jump_Proto)
+- **📝 Commits:** [View Development History](https://github.com/eroxion/Helix_Jump_Proto/commits)
 - **📂 Folder Structure:** [README_FolderStructure.md](README_FolderStructure.md)
 - **📖 Naming Conventions:** [README_NamingConventions.md](README_NamingConventions.md)
 
